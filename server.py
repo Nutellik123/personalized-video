@@ -90,8 +90,10 @@ async def render_video(background_video: Path, name: str, output_path: Path) -> 
         "-t", duration_str,
         "-r", str(VIDEO_FPS),
         "-c:v", "libx264",
-        "-preset", "fast",
-        "-crf", "23",
+        "-preset", "veryfast",
+        "-crf", "26",
+        "-tune", "fastdecode",
+        "-threads", "0",
         "-pix_fmt", "yuv420p",
         "-c:a", "aac",
         "-b:a", "128k",
@@ -121,12 +123,14 @@ def cleanup_old_files(max_age_seconds: int = 3600) -> None:
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 @app.get("/processing", response_class=HTMLResponse)
 async def processing(request: Request, name: str = ""):
     if not name.strip():
         from fastapi.responses import RedirectResponse
         return RedirectResponse("/")
     return templates.TemplateResponse("processing.html", {"request": request})
+
 
 @app.post("/generate")
 async def generate(name: str = Form(...)):
@@ -165,6 +169,7 @@ async def generate(name: str = Form(...)):
     return JSONResponse({
         "status": "done",
         "download_url": f"/download/{job_id}",
+        "watch_url": f"/watch/{job_id}",
     })
 
 
@@ -180,6 +185,20 @@ async def download(job_id: str):
         media_type="video/mp4",
         filename=f"personalized_{job_id}.mp4",
     )
+
+
+@app.get("/watch/{job_id}")
+async def watch(request: Request, job_id: str):
+    video_path = GENERATED_DIR / f"video_{job_id}.mp4"
+    if not video_path.exists():
+        return JSONResponse(
+            {"error": "Видео не найдено или устарело"}, status_code=404
+        )
+    return templates.TemplateResponse("watch.html", {
+        "request": request,
+        "job_id": job_id,
+        "video_url": f"/download/{job_id}",
+    })
 
 
 if __name__ == "__main__":
