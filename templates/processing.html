@@ -22,15 +22,6 @@
             color: #fff;
         }
 
-        /* ─── Фон с частицами ─── */
-        .bg-layer {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: linear-gradient(135deg, #021a19, #03312e, #064e47);
-            z-index: 0;
-        }
-
         canvas#particleCanvas {
             position: fixed;
             top: 0; left: 0;
@@ -49,10 +40,11 @@
         }
         .screen.active { display: flex; }
 
-        /* ─── Экран загрузки ─── */
+        /* ─── ЭКРАН ЗАГРУЗКИ ─── */
         .screen-loading {
             align-items: center;
             justify-content: center;
+            background: linear-gradient(135deg, #021a19, #03312e, #064e47);
         }
 
         .card {
@@ -65,8 +57,6 @@
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, .5),
                         0 0 40px rgba(2, 254, 247, .08);
-            position: relative;
-            z-index: 2;
             animation: cardAppear .8s ease-out;
         }
         @keyframes cardAppear {
@@ -126,86 +116,19 @@
             margin-top: 8px;
         }
 
-        /* ─── Экран результата ─── */
-        .screen-result {
-            align-items: center;
-            justify-content: center;
-        }
-
-        .result-card {
-            background: rgba(3, 49, 46, 0.85);
-            border: 1px solid rgba(2, 254, 247, .2);
-            border-radius: 24px;
-            padding: 36px 28px;
-            max-width: 420px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, .5),
-                        0 0 40px rgba(2, 254, 247, .08);
-            position: relative;
-            z-index: 2;
-            animation: cardAppear .6s ease-out;
-        }
-
-        .result-name {
-            color: #02FEF7;
-            font-size: 18px;
-            margin: 8px 0 16px;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: .3s;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            margin-top: 10px;
-            -webkit-appearance: none;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(2, 254, 247, .35);
-        }
-        .btn-watch {
-            background: linear-gradient(135deg, #02FEF7, #00c9b7);
-            color: #021a19;
-        }
-        .btn-download {
-            background: rgba(2, 254, 247, .12);
-            color: #02FEF7;
-            border: 1px solid rgba(2, 254, 247, .25);
-        }
-        .btn-again {
-            background: transparent;
-            color: rgba(2, 254, 247, .4);
-            font-size: 13px;
-            margin-top: 16px;
-        }
-        .btn-again:hover {
-            color: #02FEF7;
-            box-shadow: none;
-            transform: none;
-        }
-
-        /* ─── Экран плеера ─── */
-        .screen-player {
+        /* ─── ЭКРАН ВИДЕО ─── */
+        .screen-video {
             flex-direction: column;
             background: #000;
         }
 
-        .player-area {
+        .video-area {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 0;
-            position: relative;
+            overflow: hidden;
         }
 
         video {
@@ -215,16 +138,21 @@
             background: #000;
         }
 
-        .player-controls {
+        .video-controls {
             display: flex;
             gap: 10px;
             padding: 12px 16px;
-            padding-bottom: max(12px, env(safe-area-inset-bottom));
-            background: #000;
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
+            background: linear-gradient(transparent, rgba(0,0,0,0.95) 30%);
             flex-shrink: 0;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
         }
 
-        .pbtn {
+        .vbtn {
             flex: 1;
             padding: 14px;
             border: none;
@@ -237,43 +165,52 @@
             transition: .3s;
             -webkit-appearance: none;
         }
-        .pbtn-dl {
+        .vbtn-dl {
             background: linear-gradient(135deg, #02FEF7, #00c9b7);
             color: #021a19;
         }
-        .pbtn-back {
+        .vbtn-again {
             background: rgba(2, 254, 247, .12);
             color: #02FEF7;
             border: 1px solid rgba(2, 254, 247, .25);
         }
+        .vbtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(2, 254, 247, .3);
+        }
 
-        /* ─── Экран ошибки ─── */
+        /* ─── ЭКРАН ОШИБКИ ─── */
         .screen-error {
             align-items: center;
             justify-content: center;
+            background: linear-gradient(135deg, #021a19, #03312e, #064e47);
         }
 
         .err { color: #f87171; font-size: 14px; margin-top: 12px; }
 
-        .success-icon {
-            font-size: 56px;
-            margin-bottom: 8px;
-            animation: popIn .5s ease-out;
-        }
-        @keyframes popIn {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+        .btn-retry {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            margin-top: 20px;
+            background: linear-gradient(135deg, #02FEF7, #00c9b7);
+            color: #021a19;
+            -webkit-appearance: none;
         }
     </style>
 </head>
 <body>
 
-<div class="bg-layer"></div>
-<canvas id="particleCanvas"></canvas>
-
 <!-- ═══ ЭКРАН 1: Загрузка ═══ -->
 <div id="screen-loading" class="screen screen-loading active">
+    <canvas id="particleCanvas"></canvas>
     <div class="card">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
         <h1>Создаём твою вселенную</h1>
@@ -284,39 +221,26 @@
     </div>
 </div>
 
-<!-- ═══ ЭКРАН 2: Результат ═══ -->
-<div id="screen-result" class="screen screen-result">
-    <div class="result-card">
-        <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
-        <div class="success-icon">🎮</div>
-        <h1>Вселенная готова!</h1>
-        <p class="result-name" id="d-name"></p>
-        <button class="btn btn-watch" id="watchBtn">Смотреть видео</button>
-        <a class="btn btn-download" id="dlBtn" href="#" download>Скачать видео</a>
-        <a href="/" class="btn btn-again">← Попробовать ещё раз</a>
-    </div>
-</div>
-
-<!-- ═══ ЭКРАН 3: Плеер ═══ -->
-<div id="screen-player" class="screen screen-player">
-    <div class="player-area">
-        <video id="player" playsinline muted loop>
+<!-- ═══ ЭКРАН 2: Видео ═══ -->
+<div id="screen-video" class="screen screen-video">
+    <div class="video-area">
+        <video id="player" playsinline autoplay muted loop controls>
             <source id="videoSrc" src="" type="video/mp4">
         </video>
     </div>
-    <div class="player-controls">
-        <a id="player-dl" href="#" download class="pbtn pbtn-dl">Скачать</a>
-        <button id="player-back" class="pbtn pbtn-back">Назад</button>
+    <div class="video-controls">
+        <a id="dlBtn" href="#" download class="vbtn vbtn-dl">Скачать</a>
+        <a href="/" class="vbtn vbtn-again">Ещё раз</a>
     </div>
 </div>
 
-<!-- ═══ ЭКРАН 4: Ошибка ═══ -->
+<!-- ═══ ЭКРАН 3: Ошибка ═══ -->
 <div id="screen-error" class="screen screen-error">
     <div class="card">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
         <h1 style="color:#f87171">Ошибка</h1>
         <p class="err" id="err-msg"></p>
-        <a href="/" class="btn btn-watch" style="margin-top:20px">← Попробовать снова</a>
+        <a href="/" class="btn-retry">← Попробовать снова</a>
     </div>
 </div>
 
@@ -325,7 +249,6 @@
 const canvas = document.getElementById('particleCanvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
-const PARTICLE_COUNT = 40;
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -364,7 +287,7 @@ class Particle {
     }
 }
 
-for (let i = 0; i < PARTICLE_COUNT; i++) {
+for (let i = 0; i < 40; i++) {
     const p = new Particle();
     p.y = Math.random() * canvas.height;
     p.opacity = Math.random() * 0.3;
@@ -379,27 +302,13 @@ function animate() {
 }
 animate();
 
-// ─── Управление экранами ───
+// ─── Экраны ───
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-
-    // Скрываем/показываем фон
-    const bgLayer = document.querySelector('.bg-layer');
-    const particleCanvas = document.getElementById('particleCanvas');
-    if (id === 'screen-player') {
-        bgLayer.style.display = 'none';
-        particleCanvas.style.display = 'none';
-    } else {
-        bgLayer.style.display = 'block';
-        particleCanvas.style.display = 'block';
-    }
 }
 
-// ─── Переменные ───
-let downloadUrl = '';
-let videoUrl = '';
-
+// ─── Старт ───
 const params = new URLSearchParams(window.location.search);
 const name = params.get('name');
 
@@ -407,11 +316,9 @@ if (!name || !name.trim()) {
     window.location.href = '/';
 } else {
     document.getElementById('l-name').textContent = name;
-    document.getElementById('d-name').textContent = name;
     startGeneration(name.trim());
 }
 
-// ─── Генерация ───
 async function startGeneration(name) {
     const barFill = document.getElementById('bar-fill');
     const statusText = document.getElementById('status-text');
@@ -447,14 +354,17 @@ async function startGeneration(name) {
         barFill.style.width = '100%';
         statusText.textContent = 'Готово!';
 
-        downloadUrl = d.download_url;
-        videoUrl = d.download_url;
+        // Подставляем видео
+        document.getElementById('videoSrc').src = d.download_url;
+        document.getElementById('dlBtn').href = d.download_url;
 
-        document.getElementById('dlBtn').href = downloadUrl;
-        document.getElementById('player-dl').href = downloadUrl;
-        document.getElementById('videoSrc').src = videoUrl;
+        const vid = document.getElementById('player');
+        vid.load();
 
-        setTimeout(() => showScreen('screen-result'), 500);
+        setTimeout(() => {
+            showScreen('screen-video');
+            vid.play().catch(() => {});
+        }, 500);
 
     } catch (e) {
         document.getElementById('err-msg').textContent =
@@ -463,22 +373,11 @@ async function startGeneration(name) {
     }
 }
 
-// ─── Кнопки ───
-document.getElementById('watchBtn').addEventListener('click', () => {
-    showScreen('screen-player');
-    const vid = document.getElementById('player');
-    vid.load();
-    vid.play().catch(() => {});
-});
-
-document.getElementById('player-back').addEventListener('click', () => {
-    const vid = document.getElementById('player');
-    vid.pause();
-    showScreen('screen-result');
-});
-
-document.getElementById('player').addEventListener('click', function() {
-    this.muted = !this.muted;
+// Тап по видео — вкл/выкл звук
+document.getElementById('player').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.muted = !this.muted;
+    }
 });
 </script>
 </body>
