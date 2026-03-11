@@ -11,8 +11,7 @@
 
         html, body {
             height: 100%;
-            overflow: hidden;
-            position: fixed;
+            overflow: auto;
             width: 100%;
             background: #021a19;
         }
@@ -23,7 +22,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 100vh;
             color: #fff;
+            padding: 16px;
         }
 
         canvas#particleCanvas {
@@ -38,9 +39,9 @@
             background: rgba(3, 49, 46, 0.85);
             border: 1px solid rgba(2, 254, 247, .2);
             border-radius: 24px;
-            padding: 40px 28px;
-            max-width: 420px;
-            width: 90%;
+            padding: 32px 24px;
+            max-width: 380px;
+            width: 100%;
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, .5),
                         0 0 40px rgba(2, 254, 247, .08);
@@ -54,34 +55,34 @@
         }
 
         .logo {
-            width: 90px; height: 90px;
-            margin: 0 auto 12px;
+            width: 80px; height: 80px;
+            margin: 0 auto 10px;
         }
         .logo img { width: 100%; height: 100%; object-fit: contain; }
 
         h1 {
-            font-size: 22px;
-            margin-bottom: 8px;
+            font-size: 20px;
+            margin-bottom: 6px;
             color: #02FEF7;
             text-shadow: 0 0 20px rgba(2, 254, 247, .3);
         }
 
         .spinner {
-            width: 56px; height: 56px;
+            width: 48px; height: 48px;
             border: 4px solid rgba(2, 254, 247, .15);
             border-top-color: #02FEF7;
             border-radius: 50%;
             animation: spin .8s linear infinite;
-            margin: 20px auto 12px;
+            margin: 16px auto 10px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .bar {
             width: 100%;
-            height: 6px;
+            height: 5px;
             background: rgba(2, 254, 247, .1);
             border-radius: 3px;
-            margin-top: 16px;
+            margin-top: 12px;
             overflow: hidden;
         }
         .bar-fill {
@@ -93,16 +94,16 @@
         }
 
         .loading-text {
-            font-size: 14px;
+            font-size: 13px;
             color: rgba(2, 254, 247, .6);
-            margin-top: 12px;
+            margin-top: 10px;
         }
         .loading-text strong { color: #02FEF7; }
 
         .status-text {
-            font-size: 13px;
+            font-size: 12px;
             color: rgba(2, 254, 247, .4);
-            margin-top: 8px;
+            margin-top: 6px;
         }
 
         .state { display: none; }
@@ -110,10 +111,10 @@
 
         .btn {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border: none;
             border-radius: 12px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: .3s;
@@ -132,24 +133,13 @@
             box-shadow: 0 8px 30px rgba(2, 254, 247, .35);
         }
 
-        .success-icon {
-            font-size: 64px;
-            margin-bottom: 8px;
-            animation: popIn .5s ease-out;
-        }
-        @keyframes popIn {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
         .video-container {
             width: 100%;
             aspect-ratio: 9 / 16;
-            border-radius: 16px;
+            border-radius: 14px;
             overflow: hidden;
             border: 2px solid rgba(2, 254, 247, .2);
-            margin: 16px 0;
+            margin: 12px 0;
             background: #000;
         }
         .video-container video {
@@ -159,21 +149,11 @@
             object-fit: cover;
         }
 
-        .rarity-badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 700;
-            margin: 8px 0 12px;
-            letter-spacing: 1px;
-        }
-
         .again {
             display: inline-block;
-            margin-top: 16px;
+            margin-top: 12px;
             color: rgba(2, 254, 247, .4);
-            font-size: 13px;
+            font-size: 12px;
             text-decoration: underline;
         }
         .again:hover { color: #02FEF7; }
@@ -199,10 +179,7 @@
     <!-- DONE STATE -->
     <div id="s-done" class="state">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
-        <div class="success-icon">🎬</div>
         <h1>Видео готово!</h1>
-        <p style="color:#02FEF7; font-size:18px; margin:4px 0" id="d-name"></p>
-        <div class="rarity-badge" id="rarity-badge"></div>
         <div class="video-container">
             <video controls autoplay playsinline id="resultVideo">
                 <source id="videoSource" src="" type="video/mp4">
@@ -217,7 +194,7 @@
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
         <h1 style="color:#f87171">Ошибка</h1>
         <p class="err" id="err-msg"></p>
-        <div style="margin-top:20px"><a href="/" class="btn btn-green">← Попробовать снова</a></div>
+        <div style="margin-top:16px"><a href="/" class="btn btn-green">← Попробовать снова</a></div>
     </div>
 </div>
 
@@ -294,7 +271,6 @@ if (!name || !name.trim() || !bg || !age) {
     window.location.href = '/';
 } else {
     document.getElementById('l-name').textContent = name;
-    document.getElementById('d-name').textContent = name;
     startGeneration(name.trim(), bg, age);
 }
 
@@ -338,27 +314,6 @@ async function startGeneration(name, bg, age) {
             document.getElementById('dl').href = d.download_url;
             document.getElementById('videoSource').src = d.download_url;
             document.getElementById('resultVideo').load();
-
-            /* Rarity badge */
-            const badge = document.getElementById('rarity-badge');
-            const rarity = d.rarity;
-            badge.textContent = `⭐ Редкость: ${rarity}%`;
-
-            /* Color: #000000 → #FF8C00 based on rarity */
-            const r_c = Math.round((rarity / 100) * 255);
-            const g_c = Math.round((rarity / 100) * 140);
-            const b_c = 0;
-            const color = `rgb(${r_c}, ${g_c}, ${b_c})`;
-            badge.style.color = color;
-            badge.style.border = `1px solid ${color}`;
-            badge.style.background = `rgba(${r_c}, ${g_c}, ${b_c}, 0.1)`;
-
-            /* Glow increases with rarity */
-            const glowSize = Math.round((rarity / 100) * 20);
-            const glowOpacity = (rarity / 100) * 0.6;
-            badge.style.textShadow = `0 0 ${glowSize}px rgba(${r_c}, ${g_c}, ${b_c}, ${glowOpacity})`;
-            badge.style.boxShadow = `0 0 ${glowSize}px rgba(${r_c}, ${g_c}, ${b_c}, ${glowOpacity * 0.5})`;
-
             show(sD);
         }, 500);
     } catch (e) {

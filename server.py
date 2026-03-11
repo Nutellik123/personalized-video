@@ -53,6 +53,7 @@ NAME_TEXT_Y = 1500
 RARITY_FONT_SIZE = 50
 RARITY_TEXT_X = 920
 RARITY_TEXT_Y = 91
+RARITY_TEXT_COLOR = "000000"
 
 MAX_NAME_LENGTH = 21
 
@@ -62,7 +63,6 @@ VALID_AGE = {"1", "2", "3", "4"}
 
 
 def get_bg_video(bg_num: str) -> Path:
-    """Получить путь к фоновому видео по номеру."""
     path = ASSETS_DIR / f"bg_{bg_num}.mp4"
     if not path.exists():
         raise FileNotFoundError(f"Фоновое видео bg_{bg_num}.mp4 не найдено")
@@ -70,7 +70,6 @@ def get_bg_video(bg_num: str) -> Path:
 
 
 def get_age_plashka(age_num: str) -> Path:
-    """Получить путь к плашке возраста по номеру."""
     path = ASSETS_DIR / f"plashka_age_{age_num}.png"
     if not path.exists():
         raise FileNotFoundError(f"Плашка plashka_age_{age_num}.png не найдена")
@@ -78,12 +77,7 @@ def get_age_plashka(age_num: str) -> Path:
 
 
 def generate_rarity() -> int:
-    """
-    Генерация редкости рандомайзером.
-    Чем выше процент, тем реже выпадает.
-    """
     roll = random.random()
-
     if roll < 0.40:
         return random.randint(1, 20)
     elif roll < 0.70:
@@ -98,29 +92,13 @@ def generate_rarity() -> int:
         return random.randint(96, 100)
 
 
-def rarity_to_color(rarity: int) -> str:
-    """
-    Цвет от #000000 (0%) до #FF8C00 (100%).
-    Линейная интерполяция.
-    """
-    t = rarity / 100.0
-    r = int(255 * t)
-    g = int(140 * t)
-    b = 0
-    return f"{r:02X}{g:02X}{b:02X}"
-
-
-def rarity_glow_sigma(rarity: int) -> float:
-    """Сила свечения текста редкости. 0 при 0%, до 8 при 100%."""
-    return (rarity / 100.0) * 8.0
-
-
 def ff_escape_text(s: str) -> str:
+    """Экранирование текста для FFmpeg drawtext."""
     return (
         s.replace("\\", "\\\\")
          .replace("'", "\\'")
          .replace(":", "\\:")
-         .replace("%", "%%")
+         .replace(";", "\\;")
     )
 
 
@@ -134,116 +112,67 @@ async def render_video(
     total_start = time.time()
     duration_str = f"{VIDEO_DURATION:.4f}"
     font_escaped = str(FONT_PATH).replace("\\", "/").replace(":", "\\:")
-    text_name = ff_escape_text(name.upper())
-    text_rarity = ff_escape_text(f"{rarity}%")
 
-    rarity_color = rarity_to_color(rarity)
-    glow_sigma = rarity_glow_sigma(rarity)
+    # Текст имени — экранируем
+    text_name = ff_escape_text(name.upper())
+
+    # Текст редкости — число + знак процента
+    # В FFmpeg drawtext знак % экранируется как %%
+    rarity_str = f"{rarity}%%"
+    text_rarity = ff_escape_text(rarity_str)
 
     log.info(f"{'='*55}")
     log.info(f"🎬 НАЧАЛО ГЕНЕРАЦИИ")
-    log.info(f"   Имя: {name}")
+    log.info(f"   Имя: {name} -> drawtext: '{text_name}'")
+    log.info(f"   Редкость: {rarity}% -> drawtext: '{text_rarity}'")
     log.info(f"   Фон: {bg_video.name}")
     log.info(f"   Плашка: {age_plashka.name}")
-    log.info(f"   Редкость: {rarity}% (цвет #{rarity_color}, свечение {glow_sigma:.1f})")
     log.info(f"   Длительность: {VIDEO_DURATION:.1f} сек ({VIDEO_FRAMES} кадров)")
-    log.info(f"   Разрешение: {VIDEO_WIDTH}x{VIDEO_HEIGHT}")
     log.info(f"   Выход: {output_path.name}")
     log.info(f"{'='*55}")
 
-    # Сборка filter_complex:
-    # [0] = bg video (loop)
-    # [1] = frame_template.png
-    # [2] = plashka_age_X.png
-    #
-    # Порядок наложения:
-    #   bg → overlay frame → overlay plashka_age → drawtext name → drawtext rarity (с свечением)
-
-    # Свечение для текста редкости реализуем через два drawtext:
-    # 1. Размытый текст (тень/glow) — если glow_sigma > 0
-    # 2. Чёткий текст поверх
-
-    # Для свечения в FFmpeg используем boxblur на отдельном текстовом слое — 
-    # но проще сделать через shadowcolor + shadowx/shadowy = 0 с несколькими проходами.
-    # Самый надёжный способ: просто drawtext с shadow.
-
-    glow_alpha = min(1.0, rarity / 100.0 * 0.8)
-    glow_hex = rarity_color
-
-    filter_parts = []
-
-    # Подготовка bg
-    filter_parts.append(
+    # filter_complex собираем по частям и соединяем через ;
+    filters = [
+        # [0] bg video: trim, fps, scale
         f"[0:v]trim=duration={duration_str},setpts=PTS-STARTPTS,"
-        f"fps={VIDEO_FPS},scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}[bg]"
-    )
+        f"fps={VIDEO_FPS},scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}[bg]",
 
-    # Масштабируем frame
-    filter_parts.append(
-        f"[1:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}[frame]"
-    )
+        # [1] frame template: scale
+        f"[1:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}[frame]",
 
-    # Масштабируем plashka age (без изменения размера, как есть)
-    filter_parts.append(
-        f"[2:v]format=rgba[plashka]"
-    )
+        # [2] age plashka: as-is with alpha
+        f"[2:v]format=rgba[plashka]",
 
-    # Overlay frame на bg
-    filter_parts.append(
-        f"[bg][frame]overlay=0:0:format=auto[v1]"
-    )
+        # overlay frame on bg
+        f"[bg][frame]overlay=0:0:format=auto[v1]",
 
-    # Overlay plashka на v1
-    filter_parts.append(
-        f"[v1][plashka]overlay=0:0:format=auto[v2]"
-    )
+        # overlay plashka on v1
+        f"[v1][plashka]overlay=0:0:format=auto[v2]",
 
-    # Drawtext: имя
-    filter_parts.append(
-        f"[v2]drawtext=text='{text_name}':"
+        # drawtext: name
+        f"[v2]drawtext="
+        f"text='{text_name}':"
         f"fontfile='{font_escaped}':"
         f"fontsize={NAME_FONT_SIZE}:"
         f"fontcolor=#{NAME_TEXT_COLOR}:"
-        f"x={NAME_TEXT_X}:y={NAME_TEXT_Y}[v3]"
-    )
+        f"x={NAME_TEXT_X}:y={NAME_TEXT_Y}"
+        f"[v3]",
 
-    # Drawtext: редкость (с свечением через shadow)
-    # shadowcolor = цвет редкости с альфой, shadowx=0, shadowy=0 — даёт glow эффект
-    # Для усиления glow добавляем несколько теневых проходов
-    shadow_parts = ""
-    if glow_sigma > 1:
-        # FFmpeg drawtext поддерживает только один shadow,
-        # но мы можем сделать 2 прохода drawtext для glow
-        filter_parts.append(
-            f"[v3]drawtext=text='{text_rarity}':"
-            f"fontfile='{font_escaped}':"
-            f"fontsize={RARITY_FONT_SIZE}:"
-            f"fontcolor=#{rarity_color}@0.3:"
-            f"x={RARITY_TEXT_X}:y={RARITY_TEXT_Y}:"
-            f"shadowcolor=#{rarity_color}@{glow_alpha:.2f}:"
-            f"shadowx=0:shadowy=0[v4]"
-        )
-        # Чёткий текст поверх
-        filter_parts.append(
-            f"[v4]drawtext=text='{text_rarity}':"
-            f"fontfile='{font_escaped}':"
-            f"fontsize={RARITY_FONT_SIZE}:"
-            f"fontcolor=#{rarity_color}:"
-            f"x={RARITY_TEXT_X}:y={RARITY_TEXT_Y}:"
-            f"shadowcolor=#{rarity_color}@{glow_alpha:.2f}:"
-            f"shadowx=2:shadowy=2[out]"
-        )
-    else:
-        # Низкая редкость — просто текст без особого свечения
-        filter_parts.append(
-            f"[v3]drawtext=text='{text_rarity}':"
-            f"fontfile='{font_escaped}':"
-            f"fontsize={RARITY_FONT_SIZE}:"
-            f"fontcolor=#{rarity_color}:"
-            f"x={RARITY_TEXT_X}:y={RARITY_TEXT_Y}[out]"
-        )
+        # drawtext: rarity
+        f"[v3]drawtext="
+        f"text='{text_rarity}':"
+        f"fontfile='{font_escaped}':"
+        f"fontsize={RARITY_FONT_SIZE}:"
+        f"fontcolor=#{RARITY_TEXT_COLOR}:"
+        f"x={RARITY_TEXT_X}:y={RARITY_TEXT_Y}"
+        f"[out]",
+    ]
 
-    filter_complex = ";".join(filter_parts)
+    filter_complex = ";".join(filters)
+
+    log.info(f"📝 filter_complex:")
+    for i, f in enumerate(filters):
+        log.info(f"   [{i}] {f}")
 
     cmd = [
         "ffmpeg", "-y",
@@ -270,7 +199,7 @@ async def render_video(
         str(output_path),
     ]
 
-    log.info(f"⚙️  FFmpeg команда запущена...")
+    log.info(f"⚙️  FFmpeg запущен...")
 
     process = await asyncio.create_subprocess_exec(
         *cmd,
@@ -285,7 +214,9 @@ async def render_video(
                 break
             decoded = line.decode(errors='replace').strip()
             if decoded:
-                if any(k in decoded.lower() for k in ['frame=', 'fps=', 'speed=', 'time=', 'error', 'warning']):
+                if any(k in decoded.lower() for k in ['error', 'warning', 'invalid', 'failed']):
+                    log.error(f"   ❗ {decoded}")
+                elif any(k in decoded.lower() for k in ['frame=', 'fps=', 'speed=', 'time=']):
                     log.info(f"   📊 {decoded}")
 
     async def read_stdout():
@@ -300,7 +231,7 @@ async def render_video(
                     if frame_num % 50 == 0:
                         elapsed = time.time() - total_start
                         pct = min(100, int(frame_num / VIDEO_FRAMES * 100))
-                        log.info(f"   🔄 Прогресс: {pct}% ({frame_num}/{VIDEO_FRAMES} кадров) [{elapsed:.1f}s]")
+                        log.info(f"   🔄 {pct}% ({frame_num}/{VIDEO_FRAMES}) [{elapsed:.1f}s]")
                 except:
                     pass
 
@@ -309,17 +240,14 @@ async def render_video(
     elapsed = time.time() - total_start
 
     if process.returncode != 0:
-        log.error(f"❌ FFmpeg завершился с ошибкой (код {process.returncode})")
-        log.error(f"   Время: {elapsed:.1f} сек")
+        # Читаем полный stderr для диагностики
+        log.error(f"❌ FFmpeg ошибка (код {process.returncode}), время: {elapsed:.1f}s")
         raise RuntimeError(f"FFmpeg error (код {process.returncode})")
 
     size_mb = output_path.stat().st_size / (1024 * 1024) if output_path.exists() else 0
 
     log.info(f"{'='*55}")
-    log.info(f"✅ ГЕНЕРАЦИЯ ЗАВЕРШЕНА!")
-    log.info(f"   Время: {elapsed:.1f} сек")
-    log.info(f"   Размер: {size_mb:.1f} МБ")
-    log.info(f"   Файл: {output_path.name}")
+    log.info(f"✅ ГОТОВО! Время: {elapsed:.1f}s, Размер: {size_mb:.1f} МБ")
     log.info(f"{'='*55}")
 
 
@@ -346,7 +274,7 @@ async def home(request: Request):
 async def processing(request: Request, name: str = "", bg: str = "", age: str = ""):
     if not name.strip() or bg not in VALID_BG or age not in VALID_AGE:
         return RedirectResponse("/")
-    log.info(f"📄 Страница генерации: name={name}, bg={bg}, age={age}")
+    log.info(f"📄 Генерация: name={name}, bg={bg}, age={age}")
     return templates.TemplateResponse("processing.html", {"request": request})
 
 
@@ -357,43 +285,32 @@ async def generate(
     age: str = Form(...),
 ):
     name = name.strip()
-    log.info(f"📩 Запрос генерации: name='{name}', bg={bg}, age={age}")
+    log.info(f"📩 Запрос: name='{name}', bg={bg}, age={age}")
 
-    # Валидация
     if not name:
         return JSONResponse({"error": "Введите имя"}, status_code=400)
     if len(name) > MAX_NAME_LENGTH:
-        return JSONResponse(
-            {"error": f"Максимум {MAX_NAME_LENGTH} символов"}, status_code=400
-        )
+        return JSONResponse({"error": f"Максимум {MAX_NAME_LENGTH} символов"}, status_code=400)
     if bg not in VALID_BG:
         return JSONResponse({"error": "Неверный выбор фона"}, status_code=400)
     if age not in VALID_AGE:
         return JSONResponse({"error": "Неверный выбор возраста"}, status_code=400)
 
-    # Проверка файлов
     if not FRAME_TEMPLATE.exists():
-        log.error("❌ frame_template.png не найден!")
         return JSONResponse({"error": "frame_template.png не найден"}, status_code=500)
     if not FONT_PATH.exists():
-        log.error("❌ BoldPixels.ttf не найден!")
         return JSONResponse({"error": "BoldPixels.ttf не найден"}, status_code=500)
 
     try:
         bg_video = get_bg_video(bg)
-        log.info(f"🎥 Фоновое видео: {bg_video.name} ({bg_video.stat().st_size / (1024*1024):.1f} МБ)")
     except FileNotFoundError as e:
-        log.error(f"❌ {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
 
     try:
         age_plashka = get_age_plashka(age)
-        log.info(f"🏷️  Плашка возраста: {age_plashka.name}")
     except FileNotFoundError as e:
-        log.error(f"❌ {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
 
-    # Генерация редкости
     rarity = generate_rarity()
     log.info(f"🎲 Редкость: {rarity}%")
 
@@ -418,9 +335,7 @@ async def generate(
 async def download(job_id: str):
     video_path = GENERATED_DIR / f"video_{job_id}.mp4"
     if not video_path.exists():
-        return JSONResponse(
-            {"error": "Видео не найдено или устарело"}, status_code=404
-        )
+        return JSONResponse({"error": "Видео не найдено"}, status_code=404)
     log.info(f"📥 Скачивание: {video_path.name}")
     return FileResponse(
         str(video_path),
@@ -433,15 +348,10 @@ async def download(job_id: str):
 async def startup():
     log.info(f"🚀 Сервер запущен!")
     log.info(f"   Assets: {ASSETS_DIR}")
-    log.info(f"   Templates: {TEMPLATES_DIR}")
-    log.info(f"   Generated: {GENERATED_DIR}")
-
-    # Проверка файлов
     for i in range(1, 5):
         bg_ok = (ASSETS_DIR / f"bg_{i}.mp4").exists()
         age_ok = (ASSETS_DIR / f"plashka_age_{i}.png").exists()
         log.info(f"   bg_{i}.mp4: {'✅' if bg_ok else '❌'}  |  plashka_age_{i}.png: {'✅' if age_ok else '❌'}")
-
     log.info(f"   frame_template.png: {'✅' if FRAME_TEMPLATE.exists() else '❌'}")
     log.info(f"   BoldPixels.ttf: {'✅' if FONT_PATH.exists() else '❌'}")
     log.info(f"   monkey.png: {'✅' if (ASSETS_DIR / 'monkey.png').exists() else '❌'}")
