@@ -206,9 +206,6 @@
         <div id="rare-container" style="display:none">
             <span class="rare-badge">⭐ РЕДКИЙ ФОН!</span>
         </div>
-        <div id="cached-container" style="display:none">
-            <span class="cached-badge">⚡ Мгновенная загрузка</span>
-        </div>
         <a id="watchBtn" href="#" class="btn btn-watch">▶ Смотреть видео</a>
         <a id="dl" href="#" class="btn btn-green" download>📥 Скачать видео</a>
         <div><a href="/" class="again">← Попробовать ещё раз</a></div>
@@ -343,10 +340,7 @@ async function startGeneration(name) {
                 document.getElementById('rare-container').style.display = 'block';
             }
             
-            // Показываем бейдж кэша
-            if (d.cached) {
-                document.getElementById('cached-container').style.display = 'block';
-            }
+            
             
             show(sD);
         }, d.cached ? 100 : 500);

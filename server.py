@@ -24,15 +24,14 @@ app = FastAPI()
 BASE_DIR = Path(__file__).parent
 ASSETS_DIR = BASE_DIR / "assets"
 BG_DIR = ASSETS_DIR / "backgrounds"
-STATIC_DIR = BASE_DIR / "static"
-GENERATED_DIR = STATIC_DIR / "generated"
+GENERATED_DIR = BASE_DIR / "generated"
 TEMPLATES_DIR = BASE_DIR / "templates"
 
 GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 BG_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount("/generated", StaticFiles(directory=str(GENERATED_DIR)), name="generated")
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
@@ -56,56 +55,15 @@ RARE_BG_CHANCE = 0.001  # 0.1%
 RARE_BG_PREFIX = "bg_rare"
 
 
-# ── Утилиты для имён файлов ─────────────────────────────
-
-def sanitize_name(name: str) -> str:
-    """Транслитерация + очистка для имени файла."""
-    translit_map = {
-        'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
-        'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
-        'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
-        'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
-        'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
-    }
-    result = []
-    for ch in name.lower():
-        if ch in translit_map:
-            result.append(translit_map[ch])
-        elif ch.isascii() and (ch.isalnum() or ch in '-_'):
-            result.append(ch)
-        elif ch == ' ':
-            result.append('_')
-    sanitized = ''.join(result).strip('_')
-    sanitized = re.sub(r'_+', '_', sanitized)
-    return sanitized or 'unnamed'
-
-
-def make_video_filename(name: str, bg_name: str) -> str:
-    """Генерирует имя файла: video_{имя}_{фон}.mp4"""
-    safe_name = sanitize_name(name)
-    safe_bg = bg_name.replace('.mp4', '').replace(' ', '_').lower()
-    return f"video_{safe_name}_{safe_bg}.mp4"
-
-
-def find_cached_video(name: str, bg_name: str) -> Path | None:
-    """Ищет уже сгенерированное видео по имени + фону."""
-    filename = make_video_filename(name, bg_name)
-    cached = GENERATED_DIR / filename
-    if cached.exists():
-        return cached
-    return None
-
-
 # ── Выбор фона ──────────────────────────────────────────
 
 def get_all_backgrounds() -> tuple[list[Path], list[Path]]:
     """Возвращает (обычные фоны, редкие фоны)."""
     all_mp4 = sorted(BG_DIR.glob("*.mp4"))
-    
-    # Также проверяем старый формат — mp4 прямо в assets
+
     if not all_mp4:
         all_mp4 = sorted(ASSETS_DIR.glob("*.mp4"))
-    
+
     normal = []
     rare = []
     for f in all_mp4:
@@ -116,35 +74,40 @@ def get_all_backgrounds() -> tuple[list[Path], list[Path]]:
     return normal, rare
 
 
-def pick_background() -> tuple[Path, bool]:
+def pick_background() -> tuple[Path, bool, float]:
     """
     Выбирает случайный фон.
-    Возвращает (путь, is_rare).
+    Возвращает (путь, is_rare, rarity_percent).
     """
     normal, rare = get_all_backgrounds()
-    
+
     if not normal and not rare:
         raise FileNotFoundError(
             "Не найдено ни одного .mp4 файла в assets/backgrounds/"
         )
-    
+
     is_rare = False
-    
+    rarity_percent = 0.0
+
     # Шанс редкого фона
     if rare and random.random() < RARE_BG_CHANCE:
         chosen = random.choice(rare)
         is_rare = True
-        log.info(f"🌟 ВЫПАЛ РЕДКИЙ ФОН! {chosen.name}")
+        rarity_percent = RARE_BG_CHANCE * 100  # 0.1
+        log.info(f"🌟 ВЫПАЛ РЕДКИЙ ФОН! {chosen.name} (шанс {rarity_percent}%)")
     elif normal:
         chosen = random.choice(normal)
-        log.info(f"🎲 Выбран фон: {chosen.name}")
+        # Шанс обычного фона
+        normal_total_chance = 1.0 - RARE_BG_CHANCE if rare else 1.0
+        rarity_percent = round((normal_total_chance / len(normal)) * 100, 1)
+        log.info(f"🎲 Выбран фон: {chosen.name} (шанс ~{rarity_percent}%)")
     elif rare:
-        # Если обычных нет, берём редкий
         chosen = random.choice(rare)
         is_rare = True
+        rarity_percent = RARE_BG_CHANCE * 100
         log.info(f"🎲 Единственный фон (редкий): {chosen.name}")
-    
-    return chosen, is_rare
+
+    return chosen, is_rare, rarity_percent
 
 
 # ── FFmpeg ───────────────────────────────────────────────
@@ -299,30 +262,14 @@ async def generate(name: str = Form(...)):
 
     # Выбираем фон
     try:
-        background_video, is_rare = pick_background()
+        background_video, is_rare, rarity_percent = pick_background()
     except FileNotFoundError as e:
         log.error(f"❌ {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
 
-    # Проверяем кэш
-    cached = find_cached_video(name, background_video.name)
-    if cached:
-        # Достаём job_id из имени файла
-        job_id = cached.stem  # video_alexandr_bg_1 → используем как ID
-        log.info(f"⚡ КЭШИРОВАНО! Файл: {cached.name} (0 сек)")
-        log.info(f"   Размер: {cached.stat().st_size / (1024*1024):.1f} МБ")
-        
-        return JSONResponse({
-            "status": "done",
-            "cached": True,
-            "is_rare": is_rare,
-            "bg_name": background_video.stem,
-            "download_url": f"/download/{cached.stem}",
-            "watch_url": f"/watch/{cached.stem}",
-        })
-
-    # Генерируем новое видео
-    filename = make_video_filename(name, background_video.name)
+    # Каждый раз генерируем новое видео (без кэша)
+    file_id = f"{uuid.uuid4().hex[:8]}"
+    filename = f"{file_id}.mp4"
     video_path = GENERATED_DIR / filename
 
     try:
@@ -330,15 +277,13 @@ async def generate(name: str = Form(...)):
     except RuntimeError as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
-    file_id = video_path.stem  # video_alexandr_bg_1
-
     return JSONResponse({
         "status": "done",
-        "cached": False,
         "is_rare": is_rare,
+        "rarity_percent": rarity_percent,
         "bg_name": background_video.stem,
         "download_url": f"/download/{file_id}",
-        "watch_url": f"/watch/{file_id}",
+        "watch_url": f"/watch/{file_id}?rare={'1' if is_rare else '0'}&rp={rarity_percent}",
     })
 
 
@@ -356,7 +301,7 @@ async def download(file_id: str):
 
 
 @app.get("/watch/{file_id}")
-async def watch(request: Request, file_id: str):
+async def watch(request: Request, file_id: str, rare: str = "0", rp: str = "0"):
     video_path = GENERATED_DIR / f"{file_id}.mp4"
     if not video_path.exists():
         return JSONResponse({"error": "Видео не найдено"}, status_code=404)
@@ -365,30 +310,22 @@ async def watch(request: Request, file_id: str):
         "request": request,
         "job_id": file_id,
         "video_url": f"/download/{file_id}",
+        "is_rare": rare == "1",
+        "rarity_percent": rp,
     })
 
 
 @app.get("/stats")
 async def stats():
     """Статистика сгенерированных видео."""
-    files = list(GENERATED_DIR.glob("video_*.mp4"))
+    files = list(GENERATED_DIR.glob("*.mp4"))
     total_size = sum(f.stat().st_size for f in files) / (1024 * 1024)
-    
-    unique_names = set()
-    unique_bgs = set()
-    for f in files:
-        parts = f.stem.replace("video_", "").rsplit("_", 1)
-        if len(parts) == 2:
-            unique_names.add(parts[0])
-            unique_bgs.add(parts[1])
-    
+
     normal, rare = get_all_backgrounds()
-    
+
     return JSONResponse({
         "total_videos": len(files),
         "total_size_mb": round(total_size, 1),
-        "unique_names": len(unique_names),
-        "unique_backgrounds": len(unique_bgs),
         "available_normal_bgs": len(normal),
         "available_rare_bgs": len(rare),
     })
@@ -397,15 +334,15 @@ async def stats():
 @app.on_event("startup")
 async def startup():
     normal, rare = get_all_backgrounds()
-    cached = list(GENERATED_DIR.glob("video_*.mp4"))
-    
+    cached = list(GENERATED_DIR.glob("*.mp4"))
+
     log.info(f"🚀 Сервер запущен!")
     log.info(f"   Assets: {ASSETS_DIR}")
     log.info(f"   Backgrounds: {BG_DIR}")
     log.info(f"   Generated: {GENERATED_DIR}")
     log.info(f"   Обычных фонов: {len(normal)} шт — {[f.name for f in normal]}")
     log.info(f"   Редких фонов: {len(rare)} шт — {[f.name for f in rare]}")
-    log.info(f"   Кэшированных видео: {len(cached)} шт")
+    log.info(f"   Сгенерированных видео: {len(cached)} шт")
     log.info(f"   frame_template.png: {'✅' if FRAME_TEMPLATE.exists() else '❌'}")
     log.info(f"   BoldPixels.ttf: {'✅' if FONT_PATH.exists() else '❌'}")
     log.info(f"   monkey.png: {'✅' if (ASSETS_DIR / 'monkey.png').exists() else '❌'}")

@@ -4,194 +4,238 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#021a19">
-    <meta name="color-scheme" content="dark">
-    <title>Просмотр видео</title>
+    <title>Твоё видео</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
             height: 100%;
-            overflow: auto;
-            background: #021a19;
+            overflow: hidden;
+            position: fixed;
             width: 100%;
+            background: #000;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #021a19, #03312e, #064e47);
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            color: #fff;
-            padding: 16px;
+            flex-direction: column;
         }
 
-        canvas#particleCanvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .card {
-            background: rgba(3, 49, 46, 0.85);
-            border: 1px solid rgba(2, 254, 247, .2);
-            border-radius: 24px;
-            padding: 24px 20px;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, .5),
-                        0 0 40px rgba(2, 254, 247, .08);
+        .video-wrapper {
             position: relative;
-            z-index: 1;
-            animation: cardAppear .8s ease-out;
-        }
-        @keyframes cardAppear {
-            0% { opacity: 0; transform: translateY(30px) scale(.95); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        h1 {
-            font-size: 22px;
-            margin-bottom: 16px;
-            color: #02FEF7;
-            text-shadow: 0 0 20px rgba(2, 254, 247, .3);
-        }
-
-        .video-container {
             width: 100%;
-            aspect-ratio: 9 / 16;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 2px solid rgba(2, 254, 247, .2);
-            margin-bottom: 16px;
-            background: #000;
+            max-width: 440px;
+            max-height: 85vh;
+            aspect-ratio: 9/16;
         }
 
         video {
             width: 100%;
             height: 100%;
-            display: block;
-            object-fit: cover;
+            object-fit: contain;
+            border-radius: 16px;
+            background: #000;
+        }
+
+        /* ─── Плашка РЕДКИЙ ФОН ─── */
+        .rare-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            animation: rareAppear 0.6s ease-out 0.5s forwards;
+        }
+
+        @keyframes rareAppear {
+            0% { opacity: 0; transform: scale(0.5); }
+            60% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .rare-banner {
+            background: linear-gradient(135deg, #FFD700, #FFA500, #FF8C00, #FFD700);
+            background-size: 300% 300%;
+            animation: rareGradient 3s ease infinite, rarePulse 2s ease-in-out infinite;
+            border-radius: 16px;
+            padding: 24px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                0 0 30px rgba(255, 215, 0, 0.6),
+                0 0 60px rgba(255, 165, 0, 0.3),
+                0 0 100px rgba(255, 140, 0, 0.15),
+                inset 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes rareGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes rarePulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 30px rgba(255, 215, 0, 0.6),
+                    0 0 60px rgba(255, 165, 0, 0.3),
+                    0 0 100px rgba(255, 140, 0, 0.15);
+            }
+            50% {
+                box-shadow:
+                    0 0 50px rgba(255, 215, 0, 0.8),
+                    0 0 90px rgba(255, 165, 0, 0.5),
+                    0 0 140px rgba(255, 140, 0, 0.25);
+            }
+        }
+
+        /* Свечение-блик */
+        .rare-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.2) 45%,
+                rgba(255, 255, 255, 0.4) 50%,
+                rgba(255, 255, 255, 0.2) 55%,
+                transparent 70%
+            );
+            animation: rareShine 3s ease-in-out infinite;
+        }
+
+        @keyframes rareShine {
+            0% { transform: rotate(45deg) translateX(-150%); }
+            100% { transform: rotate(45deg) translateX(150%); }
+        }
+
+        /* Частицы-искры */
+        .rare-banner::after {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            border-radius: 18px;
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            animation: rareBorder 2s ease-in-out infinite;
+        }
+
+        @keyframes rareBorder {
+            0%, 100% { border-color: rgba(255, 215, 0, 0.5); }
+            50% { border-color: rgba(255, 215, 0, 1); }
+        }
+
+        .rare-label {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(100, 60, 0, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .rare-percent {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            color: #4a2800;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .rare-fade {
+            animation: rareFadeOut 0.5s ease-in 4s forwards;
+        }
+
+        @keyframes rareFadeOut {
+            to { opacity: 0; }
+        }
+
+        /* ─── Кнопки ─── */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            width: 100%;
+            max-width: 440px;
+            padding: 0 4px;
         }
 
         .btn {
-            width: 100%;
+            flex: 1;
             padding: 14px;
             border: none;
             border-radius: 12px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: .3s;
-            letter-spacing: .5px;
-            color: #021a19;
             text-decoration: none;
-            display: block;
-            margin-top: 10px;
+            text-align: center;
+            transition: .3s;
             -webkit-appearance: none;
         }
-        .btn-green {
-            background: linear-gradient(135deg, #02FEF7, #00e6a0);
+        .btn-dl {
+            background: linear-gradient(135deg, #02FEF7, #00c9b7);
+            color: #021a19;
+        }
+        .btn-back {
+            background: rgba(2, 254, 247, .12);
+            color: #02FEF7;
+            border: 1px solid rgba(2, 254, 247, .25);
         }
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(2, 254, 247, .35);
+            box-shadow: 0 6px 20px rgba(2, 254, 247, .3);
         }
-
-        .links {
-            margin-top: 16px;
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-        }
-        .links a {
-            color: rgba(2, 254, 247, .4);
-            font-size: 13px;
-            text-decoration: underline;
-        }
-        .links a:hover { color: #02FEF7; }
     </style>
 </head>
 <body>
 
-<canvas id="particleCanvas"></canvas>
+<div class="video-wrapper">
+    <video id="player" playsinline autoplay muted loop>
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
 
-<div class="card">
-    <h1>🎬 Ваше видео</h1>
-
-    <div class="video-container">
-        <video controls autoplay playsinline>
-            <source src="{{ video_url }}" type="video/mp4">
-        </video>
+    {% if is_rare %}
+    <div class="rare-overlay rare-fade" id="rareOverlay">
+        <div class="rare-banner">
+            <div class="rare-label">Редкость</div>
+            <div class="rare-percent">{{ rarity_percent }}%</div>
+        </div>
     </div>
+    {% endif %}
+</div>
 
-    <a href="{{ video_url }}" class="btn btn-green" download>📥 Скачать видео</a>
-
-    <div class="links">
-        <a href="/">← Создать ещё</a>
-    </div>
+<div class="controls">
+    <a href="{{ video_url }}" download class="btn btn-dl">Скачать</a>
+    <a href="/" class="btn btn-back">Ещё раз</a>
 </div>
 
 <script>
-const canvas = document.getElementById('particleCanvas');
-const ctx = canvas.getContext('2d');
-let particles = [];
+const vid = document.getElementById('player');
+vid.play().catch(() => {});
+vid.addEventListener('click', () => {
+    vid.muted = !vid.muted;
+});
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+// Редкая плашка исчезает через 4.5 секунд
+const rare = document.getElementById('rareOverlay');
+if (rare) {
+    setTimeout(() => {
+        rare.style.pointerEvents = 'none';
+    }, 4500);
 }
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-
-class Particle {
-    constructor() { this.reset(); }
-    reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = canvas.height + Math.random() * 100;
-        this.size = 1.5 + Math.random() * 3;
-        this.speedY = -(0.3 + Math.random() * 0.8);
-        this.speedX = (Math.random() - 0.5) * 0.3;
-        this.opacity = 0;
-        this.maxOpacity = 0.15 + Math.random() * 0.35;
-        this.fadeIn = true;
-    }
-    update() {
-        this.y += this.speedY;
-        this.x += this.speedX;
-        if (this.fadeIn) {
-            this.opacity += 0.008;
-            if (this.opacity >= this.maxOpacity) this.fadeIn = false;
-        }
-        if (this.y < canvas.height * 0.2) this.opacity -= 0.005;
-        if (this.opacity <= 0 || this.y < -20) this.reset();
-    }
-    draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(2, 254, 247, ${this.opacity})`;
-        ctx.fill();
-    }
-}
-
-for (let i = 0; i < 40; i++) {
-    const p = new Particle();
-    p.y = Math.random() * canvas.height;
-    p.opacity = Math.random() * 0.3;
-    p.fadeIn = false;
-    particles.push(p);
-}
-
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach(p => { p.update(); p.draw(); });
-    requestAnimationFrame(animate);
-}
-animate();
 </script>
 </body>
 </html>
