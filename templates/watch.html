@@ -13,163 +13,33 @@
             width: 100%;
             overflow: hidden;
             background: #000;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .page {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            height: 100dvh;
-            width: 100%;
-        }
-
-        .video-area {
-            flex: 1;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            min-height: 0;
-        }
-
         video {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            border-radius: 0;
+            width: 100%;
+            height: 100vh;
+            object-fit: cover;
             background: #000;
-            display: block;
         }
 
-        /* ─── Плашка РЕДКИЙ ФОН ─── */
-        .rare-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            pointer-events: none;
-            opacity: 0;
-            animation: rareAppear 0.6s ease-out 0.5s forwards;
-        }
-
-        @keyframes rareAppear {
-            0% { opacity: 0; transform: scale(0.5); }
-            60% { opacity: 1; transform: scale(1.05); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .rare-banner {
-            background: linear-gradient(135deg, #FFD700, #FFA500, #FF8C00, #FFD700);
-            background-size: 300% 300%;
-            animation: rareGradient 3s ease infinite, rareBannerPulse 2s ease-in-out infinite;
-            border-radius: 16px;
-            padding: 24px 40px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow:
-                0 0 30px rgba(255, 215, 0, 0.6),
-                0 0 60px rgba(255, 165, 0, 0.3),
-                0 0 100px rgba(255, 140, 0, 0.15),
-                inset 0 0 30px rgba(255, 255, 255, 0.1);
-        }
-
-        @keyframes rareGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes rareBannerPulse {
-            0%, 100% {
-                box-shadow:
-                    0 0 30px rgba(255, 215, 0, 0.6),
-                    0 0 60px rgba(255, 165, 0, 0.3);
-            }
-            50% {
-                box-shadow:
-                    0 0 50px rgba(255, 215, 0, 0.8),
-                    0 0 90px rgba(255, 165, 0, 0.5);
-            }
-        }
-
-        .rare-banner::before {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: linear-gradient(
-                45deg,
-                transparent 30%,
-                rgba(255, 255, 255, 0.2) 45%,
-                rgba(255, 255, 255, 0.4) 50%,
-                rgba(255, 255, 255, 0.2) 55%,
-                transparent 70%
-            );
-            animation: rareShine 3s ease-in-out infinite;
-        }
-
-        @keyframes rareShine {
-            0% { transform: rotate(45deg) translateX(-150%); }
-            100% { transform: rotate(45deg) translateX(150%); }
-        }
-
-        .rare-banner::after {
-            content: '';
-            position: absolute;
-            top: -2px; left: -2px; right: -2px; bottom: -2px;
-            border-radius: 18px;
-            border: 2px solid rgba(255, 215, 0, 0.5);
-            animation: rareBorder 2s ease-in-out infinite;
-        }
-
-        @keyframes rareBorder {
-            0%, 100% { border-color: rgba(255, 215, 0, 0.5); }
-            50% { border-color: rgba(255, 215, 0, 1); }
-        }
-
-        .rare-label {
-            font-size: 14px;
-            font-weight: 600;
-            color: rgba(100, 60, 0, 0.8);
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 4px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .rare-percent {
-            font-size: 36px;
-            font-weight: 900;
-            color: #4a2800;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
-            position: relative;
-            z-index: 1;
-        }
-
-        .rare-fade {
-            animation: rareAppear 0.6s ease-out 0.5s forwards, rareFadeOut 0.5s ease-in 4s forwards;
-        }
-
-        @keyframes rareFadeOut {
-            to { opacity: 0; }
-        }
-
-        /* ─── Кнопки ─── */
         .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0; right: 0;
             display: flex;
             gap: 10px;
             padding: 12px 16px;
             padding-bottom: max(12px, env(safe-area-inset-bottom));
-            background: #000;
-            flex-shrink: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            z-index: 10;
         }
 
         .btn {
@@ -202,26 +72,13 @@
 </head>
 <body>
 
-<div class="page">
-    <div class="video-area">
-        <video id="player" playsinline autoplay muted loop>
-            <source src="{{ video_url }}" type="video/mp4">
-        </video>
+<video id="player" playsinline autoplay muted loop>
+    <source src="{{ video_url }}" type="video/mp4">
+</video>
 
-        {% if is_rare %}
-        <div class="rare-overlay rare-fade" id="rareOverlay">
-            <div class="rare-banner">
-                <div class="rare-label">Редкость</div>
-                <div class="rare-percent">{{ rarity_percent }}%</div>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
-    <div class="controls">
-        <a href="{{ video_url }}" download class="btn btn-dl">Скачать</a>
-        <a href="/" class="btn btn-back">Ещё раз</a>
-    </div>
+<div class="controls">
+    <a href="{{ video_url }}" download class="btn btn-dl">Скачать</a>
+    <a href="/" class="btn btn-back">Ещё раз</a>
 </div>
 
 <script>
