@@ -19,11 +19,16 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #021a19, #03312e, #064e47);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             color: #fff;
+        }
+
+        /* ─── Фон с частицами ─── */
+        .bg-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #021a19, #03312e, #064e47);
+            z-index: 0;
         }
 
         canvas#particleCanvas {
@@ -31,7 +36,23 @@
             top: 0; left: 0;
             width: 100%; height: 100%;
             pointer-events: none;
-            z-index: 0;
+            z-index: 1;
+        }
+
+        /* ─── Экраны ─── */
+        .screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none;
+            z-index: 10;
+        }
+        .screen.active { display: flex; }
+
+        /* ─── Экран загрузки ─── */
+        .screen-loading {
+            align-items: center;
+            justify-content: center;
         }
 
         .card {
@@ -45,7 +66,7 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, .5),
                         0 0 40px rgba(2, 254, 247, .08);
             position: relative;
-            z-index: 1;
+            z-index: 2;
             animation: cardAppear .8s ease-out;
         }
         @keyframes cardAppear {
@@ -105,38 +126,137 @@
             margin-top: 8px;
         }
 
-        .state { display: none; }
-        .state.active { display: block; }
+        /* ─── Экран результата ─── */
+        .screen-result {
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-card {
+            background: rgba(3, 49, 46, 0.85);
+            border: 1px solid rgba(2, 254, 247, .2);
+            border-radius: 24px;
+            padding: 36px 28px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .5),
+                        0 0 40px rgba(2, 254, 247, .08);
+            position: relative;
+            z-index: 2;
+            animation: cardAppear .6s ease-out;
+        }
+
+        .result-name {
+            color: #02FEF7;
+            font-size: 18px;
+            margin: 8px 0 16px;
+        }
 
         .btn {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             border: none;
             border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: .3s;
-            letter-spacing: .5px;
-            color: #021a19;
             text-decoration: none;
             display: block;
-            margin-top: 12px;
+            text-align: center;
+            margin-top: 10px;
             -webkit-appearance: none;
-        }
-        .btn-green {
-            background: linear-gradient(135deg, #02FEF7, #00e6a0);
-        }
-        .btn-watch {
-            background: linear-gradient(135deg, #02FEF7, #00c9b7);
         }
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 30px rgba(2, 254, 247, .35);
         }
+        .btn-watch {
+            background: linear-gradient(135deg, #02FEF7, #00c9b7);
+            color: #021a19;
+        }
+        .btn-download {
+            background: rgba(2, 254, 247, .12);
+            color: #02FEF7;
+            border: 1px solid rgba(2, 254, 247, .25);
+        }
+        .btn-again {
+            background: transparent;
+            color: rgba(2, 254, 247, .4);
+            font-size: 13px;
+            margin-top: 16px;
+        }
+        .btn-again:hover {
+            color: #02FEF7;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* ─── Экран плеера ─── */
+        .screen-player {
+            flex-direction: column;
+            background: #000;
+        }
+
+        .player-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 0;
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .player-controls {
+            display: flex;
+            gap: 10px;
+            padding: 12px 16px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            background: #000;
+            flex-shrink: 0;
+        }
+
+        .pbtn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: .3s;
+            -webkit-appearance: none;
+        }
+        .pbtn-dl {
+            background: linear-gradient(135deg, #02FEF7, #00c9b7);
+            color: #021a19;
+        }
+        .pbtn-back {
+            background: rgba(2, 254, 247, .12);
+            color: #02FEF7;
+            border: 1px solid rgba(2, 254, 247, .25);
+        }
+
+        /* ─── Экран ошибки ─── */
+        .screen-error {
+            align-items: center;
+            justify-content: center;
+        }
+
+        .err { color: #f87171; font-size: 14px; margin-top: 12px; }
 
         .success-icon {
-            font-size: 64px;
+            font-size: 56px;
             margin-bottom: 8px;
             animation: popIn .5s ease-out;
         }
@@ -145,51 +265,16 @@
             50% { transform: scale(1.2); }
             100% { transform: scale(1); }
         }
-
-        .rare-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-            color: #000;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin-top: 8px;
-            animation: rarePulse 1.5s ease-in-out infinite;
-        }
-        @keyframes rarePulse {
-            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, .4); }
-            50% { box-shadow: 0 0 25px rgba(255, 215, 0, .8); }
-        }
-
-        .cached-badge {
-            display: inline-block;
-            background: rgba(2, 254, 247, .15);
-            color: #02FEF7;
-            font-size: 11px;
-            padding: 3px 10px;
-            border-radius: 20px;
-            margin-top: 6px;
-        }
-
-        .again {
-            display: inline-block;
-            margin-top: 20px;
-            color: rgba(2, 254, 247, .4);
-            font-size: 13px;
-            text-decoration: underline;
-        }
-        .again:hover { color: #02FEF7; }
-
-        .err { color: #f87171; font-size: 14px; margin-top: 12px; }
     </style>
 </head>
 <body>
 
+<div class="bg-layer"></div>
 <canvas id="particleCanvas"></canvas>
 
-<div class="card">
-    <div id="s-load" class="state active">
+<!-- ═══ ЭКРАН 1: Загрузка ═══ -->
+<div id="screen-loading" class="screen screen-loading active">
+    <div class="card">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
         <h1>Создаём твою вселенную</h1>
         <div class="spinner"></div>
@@ -197,29 +282,46 @@
         <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
         <p class="status-text" id="status-text">Подготовка...</p>
     </div>
+</div>
 
-    <div id="s-done" class="state">
+<!-- ═══ ЭКРАН 2: Результат ═══ -->
+<div id="screen-result" class="screen screen-result">
+    <div class="result-card">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
         <div class="success-icon">🎮</div>
         <h1>Вселенная готова!</h1>
-        <p style="color:#02FEF7; font-size:18px; margin:8px 0" id="d-name"></p>
-        <div id="rare-container" style="display:none">
-            <span class="rare-badge">⭐ РЕДКИЙ ФОН!</span>
-        </div>
-        <a id="watchBtn" href="#" class="btn btn-watch">▶ Смотреть видео</a>
-        <a id="dl" href="#" class="btn btn-green" download>📥 Скачать видео</a>
-        <div><a href="/" class="again">← Попробовать ещё раз</a></div>
+        <p class="result-name" id="d-name"></p>
+        <button class="btn btn-watch" id="watchBtn">Смотреть видео</button>
+        <a class="btn btn-download" id="dlBtn" href="#" download>Скачать видео</a>
+        <a href="/" class="btn btn-again">← Попробовать ещё раз</a>
     </div>
+</div>
 
-    <div id="s-err" class="state">
+<!-- ═══ ЭКРАН 3: Плеер ═══ -->
+<div id="screen-player" class="screen screen-player">
+    <div class="player-area">
+        <video id="player" playsinline muted loop>
+            <source id="videoSrc" src="" type="video/mp4">
+        </video>
+    </div>
+    <div class="player-controls">
+        <a id="player-dl" href="#" download class="pbtn pbtn-dl">Скачать</a>
+        <button id="player-back" class="pbtn pbtn-back">Назад</button>
+    </div>
+</div>
+
+<!-- ═══ ЭКРАН 4: Ошибка ═══ -->
+<div id="screen-error" class="screen screen-error">
+    <div class="card">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
         <h1 style="color:#f87171">Ошибка</h1>
         <p class="err" id="err-msg"></p>
-        <div style="margin-top:20px"><a href="/" class="btn btn-green">← Попробовать снова</a></div>
+        <a href="/" class="btn btn-watch" style="margin-top:20px">← Попробовать снова</a>
     </div>
 </div>
 
 <script>
+// ─── Частицы ───
 const canvas = document.getElementById('particleCanvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
@@ -277,16 +379,26 @@ function animate() {
 }
 animate();
 
-const sL = document.getElementById('s-load');
-const sD = document.getElementById('s-done');
-const sE = document.getElementById('s-err');
-const barFill = document.getElementById('bar-fill');
-const statusText = document.getElementById('status-text');
+// ─── Управление экранами ───
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
 
-function show(s) {
-    [sL, sD, sE].forEach(e => e.classList.remove('active'));
-    s.classList.add('active');
+    // Скрываем/показываем фон
+    const bgLayer = document.querySelector('.bg-layer');
+    const particleCanvas = document.getElementById('particleCanvas');
+    if (id === 'screen-player') {
+        bgLayer.style.display = 'none';
+        particleCanvas.style.display = 'none';
+    } else {
+        bgLayer.style.display = 'block';
+        particleCanvas.style.display = 'block';
+    }
 }
+
+// ─── Переменные ───
+let downloadUrl = '';
+let videoUrl = '';
 
 const params = new URLSearchParams(window.location.search);
 const name = params.get('name');
@@ -299,7 +411,11 @@ if (!name || !name.trim()) {
     startGeneration(name.trim());
 }
 
+// ─── Генерация ───
 async function startGeneration(name) {
+    const barFill = document.getElementById('bar-fill');
+    const statusText = document.getElementById('status-text');
+
     const stages = [
         { pct: 10, text: 'Загрузка ресурсов...', delay: 400 },
         { pct: 25, text: 'Компиляция видео...', delay: 1500 },
@@ -331,25 +447,39 @@ async function startGeneration(name) {
         barFill.style.width = '100%';
         statusText.textContent = 'Готово!';
 
-        setTimeout(() => {
-            document.getElementById('dl').href = d.download_url;
-            document.getElementById('watchBtn').href = d.watch_url;
-            
-            // Показываем бейдж редкого фона
-            if (d.is_rare) {
-                document.getElementById('rare-container').style.display = 'block';
-            }
-            
-            
-            
-            show(sD);
-        }, d.cached ? 100 : 500);
+        downloadUrl = d.download_url;
+        videoUrl = d.download_url;
+
+        document.getElementById('dlBtn').href = downloadUrl;
+        document.getElementById('player-dl').href = downloadUrl;
+        document.getElementById('videoSrc').src = videoUrl;
+
+        setTimeout(() => showScreen('screen-result'), 500);
+
     } catch (e) {
         document.getElementById('err-msg').textContent =
             e.name === 'AbortError' ? 'Превышено время ожидания.' : e.message;
-        show(sE);
+        showScreen('screen-error');
     }
 }
+
+// ─── Кнопки ───
+document.getElementById('watchBtn').addEventListener('click', () => {
+    showScreen('screen-player');
+    const vid = document.getElementById('player');
+    vid.load();
+    vid.play().catch(() => {});
+});
+
+document.getElementById('player-back').addEventListener('click', () => {
+    const vid = document.getElementById('player');
+    vid.pause();
+    showScreen('screen-result');
+});
+
+document.getElementById('player').addEventListener('click', function() {
+    this.muted = !this.muted;
+});
 </script>
 </body>
 </html>
