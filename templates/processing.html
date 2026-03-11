@@ -38,7 +38,7 @@
             background: rgba(3, 49, 46, 0.85);
             border: 1px solid rgba(2, 254, 247, .2);
             border-radius: 24px;
-            padding: 48px 36px;
+            padding: 40px 28px;
             max-width: 420px;
             width: 90%;
             text-align: center;
@@ -54,13 +54,13 @@
         }
 
         .logo {
-            width: 100px; height: 100px;
-            margin: 0 auto 16px;
+            width: 90px; height: 90px;
+            margin: 0 auto 12px;
         }
         .logo img { width: 100%; height: 100%; object-fit: contain; }
 
         h1 {
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 8px;
             color: #02FEF7;
             text-shadow: 0 0 20px rgba(2, 254, 247, .3);
@@ -72,7 +72,7 @@
             border-top-color: #02FEF7;
             border-radius: 50%;
             animation: spin .8s linear infinite;
-            margin: 24px auto 16px;
+            margin: 20px auto 12px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -110,10 +110,10 @@
 
         .btn {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             border: none;
             border-radius: 12px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: .3s;
@@ -121,14 +121,11 @@
             color: #021a19;
             text-decoration: none;
             display: block;
-            margin-top: 12px;
+            margin-top: 10px;
             -webkit-appearance: none;
         }
         .btn-green {
             background: linear-gradient(135deg, #02FEF7, #00e6a0);
-        }
-        .btn-watch {
-            background: linear-gradient(135deg, #02FEF7, #00c9b7);
         }
         .btn:hover {
             transform: translateY(-2px);
@@ -146,9 +143,35 @@
             100% { transform: scale(1); }
         }
 
+        .video-container {
+            width: 100%;
+            aspect-ratio: 9 / 16;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(2, 254, 247, .2);
+            margin: 16px 0;
+            background: #000;
+        }
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        .rarity-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            margin: 8px 0 12px;
+            letter-spacing: 1px;
+        }
+
         .again {
             display: inline-block;
-            margin-top: 20px;
+            margin-top: 16px;
             color: rgba(2, 254, 247, .4);
             font-size: 13px;
             text-decoration: underline;
@@ -163,6 +186,7 @@
 <canvas id="particleCanvas"></canvas>
 
 <div class="card">
+    <!-- LOADING STATE -->
     <div id="s-load" class="state active">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
         <h1>Создаём видео</h1>
@@ -172,15 +196,23 @@
         <p class="status-text" id="status-text">Подготовка...</p>
     </div>
 
+    <!-- DONE STATE -->
     <div id="s-done" class="state">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
+        <div class="success-icon">🎬</div>
         <h1>Видео готово!</h1>
-        <p style="color:#02FEF7; font-size:18px; margin:8px 0" id="d-name"></p>
-        <a id="watchBtn" href="#" class="btn btn-watch">▶ Смотреть видео</a>
+        <p style="color:#02FEF7; font-size:18px; margin:4px 0" id="d-name"></p>
+        <div class="rarity-badge" id="rarity-badge"></div>
+        <div class="video-container">
+            <video controls autoplay playsinline id="resultVideo">
+                <source id="videoSource" src="" type="video/mp4">
+            </video>
+        </div>
         <a id="dl" href="#" class="btn btn-green" download>📥 Скачать видео</a>
         <div><a href="/" class="again">← Создать ещё одно</a></div>
     </div>
 
+    <!-- ERROR STATE -->
     <div id="s-err" class="state">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
         <h1 style="color:#f87171">Ошибка</h1>
@@ -190,15 +222,12 @@
 </div>
 
 <script>
+/* ── Particles ── */
 const canvas = document.getElementById('particleCanvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
-const PARTICLE_COUNT = 40;
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
@@ -217,10 +246,7 @@ class Particle {
     update() {
         this.y += this.speedY;
         this.x += this.speedX;
-        if (this.fadeIn) {
-            this.opacity += 0.008;
-            if (this.opacity >= this.maxOpacity) this.fadeIn = false;
-        }
+        if (this.fadeIn) { this.opacity += 0.008; if (this.opacity >= this.maxOpacity) this.fadeIn = false; }
         if (this.y < canvas.height * 0.2) this.opacity -= 0.005;
         if (this.opacity <= 0 || this.y < -20) this.reset();
     }
@@ -232,7 +258,7 @@ class Particle {
     }
 }
 
-for (let i = 0; i < PARTICLE_COUNT; i++) {
+for (let i = 0; i < 40; i++) {
     const p = new Particle();
     p.y = Math.random() * canvas.height;
     p.opacity = Math.random() * 0.3;
@@ -247,6 +273,7 @@ function animate() {
 }
 animate();
 
+/* ── Generation Logic ── */
 const sL = document.getElementById('s-load');
 const sD = document.getElementById('s-done');
 const sE = document.getElementById('s-err');
@@ -260,22 +287,26 @@ function show(s) {
 
 const params = new URLSearchParams(window.location.search);
 const name = params.get('name');
+const bg = params.get('bg');
+const age = params.get('age');
 
-if (!name || !name.trim()) {
+if (!name || !name.trim() || !bg || !age) {
     window.location.href = '/';
 } else {
     document.getElementById('l-name').textContent = name;
     document.getElementById('d-name').textContent = name;
-    startGeneration(name.trim());
+    startGeneration(name.trim(), bg, age);
 }
 
-async function startGeneration(name) {
+async function startGeneration(name, bg, age) {
     const stages = [
-        { pct: 15, text: 'Загрузка ресурсов...', delay: 500 },
-        { pct: 30, text: 'Обработка видео...', delay: 1500 },
-        { pct: 55, text: 'Наложение текста...', delay: 3000 },
-        { pct: 75, text: 'Рендеринг...', delay: 5000 },
-        { pct: 90, text: 'Почти готово...', delay: 8000 },
+        { pct: 10, text: 'Загрузка ресурсов...', delay: 400 },
+        { pct: 25, text: 'Подбираем вайб...', delay: 1200 },
+        { pct: 40, text: 'Накладываем плашки...', delay: 2500 },
+        { pct: 55, text: 'Обработка видео...', delay: 4000 },
+        { pct: 70, text: 'Наложение текста...', delay: 6000 },
+        { pct: 85, text: 'Рендеринг...', delay: 8000 },
+        { pct: 92, text: 'Почти готово...', delay: 10000 },
     ];
 
     stages.forEach(s => {
@@ -288,9 +319,11 @@ async function startGeneration(name) {
     try {
         const fd = new FormData();
         fd.append('name', name);
+        fd.append('bg', bg);
+        fd.append('age', age);
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 120000);
+        const timeout = setTimeout(() => controller.abort(), 180000);
 
         const r = await fetch('/generate', { method: 'POST', body: fd, signal: controller.signal });
         clearTimeout(timeout);
@@ -303,7 +336,29 @@ async function startGeneration(name) {
 
         setTimeout(() => {
             document.getElementById('dl').href = d.download_url;
-            document.getElementById('watchBtn').href = d.watch_url;
+            document.getElementById('videoSource').src = d.download_url;
+            document.getElementById('resultVideo').load();
+
+            /* Rarity badge */
+            const badge = document.getElementById('rarity-badge');
+            const rarity = d.rarity;
+            badge.textContent = `⭐ Редкость: ${rarity}%`;
+
+            /* Color: #000000 → #FF8C00 based on rarity */
+            const r_c = Math.round((rarity / 100) * 255);
+            const g_c = Math.round((rarity / 100) * 140);
+            const b_c = 0;
+            const color = `rgb(${r_c}, ${g_c}, ${b_c})`;
+            badge.style.color = color;
+            badge.style.border = `1px solid ${color}`;
+            badge.style.background = `rgba(${r_c}, ${g_c}, ${b_c}, 0.1)`;
+
+            /* Glow increases with rarity */
+            const glowSize = Math.round((rarity / 100) * 20);
+            const glowOpacity = (rarity / 100) * 0.6;
+            badge.style.textShadow = `0 0 ${glowSize}px rgba(${r_c}, ${g_c}, ${b_c}, ${glowOpacity})`;
+            badge.style.boxShadow = `0 0 ${glowSize}px rgba(${r_c}, ${g_c}, ${b_c}, ${glowOpacity * 0.5})`;
+
             show(sD);
         }, 500);
     } catch (e) {
