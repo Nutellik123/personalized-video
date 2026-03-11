@@ -1,12 +1,21 @@
 import uuid
 import time
 import asyncio
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+# ── Логирование ──────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+log = logging.getLogger("videoapp")
 
 app = FastAPI()
 
@@ -62,9 +71,19 @@ def ff_escape_text(s: str) -> str:
 
 
 async def render_video(background_video: Path, name: str, output_path: Path) -> None:
+    total_start = time.time()
     duration_str = f"{VIDEO_DURATION:.4f}"
     font_escaped = str(FONT_PATH).replace("\\", "/").replace(":", "\\:")
     text = ff_escape_text(name.upper())
+
+    log.info(f"{'='*50}")
+    log.info(f"🎬 НАЧАЛО ГЕНЕРАЦИИ")
+    log.info(f"   Имя: {name}")
+    log.info(f"   Фон: {background_video.name}")
+    log.info(f"   Длительность: {VIDEO_DURATION:.1f} сек ({VIDEO_FRAMES} кадров)")
+    log.info(f"   Разрешение: {VIDEO_WIDTH}x{VIDEO_HEIGHT}")
+    log.info(f"   Выход: {output_path.name}")
+    log.info(f"{'='*50}")
 
     filter_complex = (
         f"[0:v]trim=duration={duration_str},setpts=PTS-STARTPTS,"
@@ -90,37 +109,90 @@ async def render_video(background_video: Path, name: str, output_path: Path) -> 
         "-t", duration_str,
         "-r", str(VIDEO_FPS),
         "-c:v", "libx264",
-        "-preset", "veryfast",
-        "-crf", "26",
+        "-preset", "ultrafast",
+        "-crf", "28",
         "-tune", "fastdecode",
         "-threads", "0",
         "-pix_fmt", "yuv420p",
         "-c:a", "aac",
-        "-b:a", "128k",
+        "-b:a", "96k",
         "-movflags", "+faststart",
+        "-loglevel", "info",
+        "-progress", "pipe:1",
         str(output_path),
     ]
+
+    log.info(f"⚙️  FFmpeg команда запущена...")
 
     process = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    _, stderr = await process.communicate()
+
+    # Читаем stderr в реальном времени
+    async def read_stderr():
+        while True:
+            line = await process.stderr.readline()
+            if not line:
+                break
+            decoded = line.decode(errors='replace').strip()
+            if decoded:
+                # Показываем важные строки
+                if any(k in decoded.lower() for k in ['frame=', 'fps=', 'speed=', 'time=', 'error', 'warning']):
+                    log.info(f"   📊 {decoded}")
+
+    async def read_stdout():
+        frame_count = 0
+        while True:
+            line = await process.stdout.readline()
+            if not line:
+                break
+            decoded = line.decode(errors='replace').strip()
+            if decoded.startswith('frame='):
+                try:
+                    frame_num = int(decoded.split('=')[1])
+                    if frame_num % 50 == 0:
+                        elapsed = time.time() - total_start
+                        pct = min(100, int(frame_num / VIDEO_FRAMES * 100))
+                        log.info(f"   🔄 Прогресс: {pct}% ({frame_num}/{VIDEO_FRAMES} кадров) [{elapsed:.1f}s]")
+                except:
+                    pass
+
+    await asyncio.gather(read_stderr(), read_stdout(), process.wait())
+
+    elapsed = time.time() - total_start
 
     if process.returncode != 0:
-        raise RuntimeError(f"FFmpeg error: {stderr.decode(errors='replace')}")
+        log.error(f"❌ FFmpeg завершился с ошибкой (код {process.returncode})")
+        log.error(f"   Время: {elapsed:.1f} сек")
+        raise RuntimeError(f"FFmpeg error (код {process.returncode})")
+
+    # Размер файла
+    size_mb = output_path.stat().st_size / (1024 * 1024) if output_path.exists() else 0
+
+    log.info(f"{'='*50}")
+    log.info(f"✅ ГЕНЕРАЦИЯ ЗАВЕРШЕНА!")
+    log.info(f"   Время: {elapsed:.1f} сек")
+    log.info(f"   Размер: {size_mb:.1f} МБ")
+    log.info(f"   Файл: {output_path.name}")
+    log.info(f"{'='*50}")
 
 
 def cleanup_old_files(max_age_seconds: int = 3600) -> None:
     now = time.time()
+    count = 0
     for f in GENERATED_DIR.iterdir():
         if f.is_file() and (now - f.stat().st_mtime > max_age_seconds):
             f.unlink(missing_ok=True)
+            count += 1
+    if count:
+        log.info(f"🗑️  Удалено {count} старых файлов")
 
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
+    log.info("📄 Главная страница")
     return templates.TemplateResponse("index.html", {"request": request})
 
 
@@ -129,12 +201,15 @@ async def processing(request: Request, name: str = ""):
     if not name.strip():
         from fastapi.responses import RedirectResponse
         return RedirectResponse("/")
+    log.info(f"📄 Страница генерации для: {name}")
     return templates.TemplateResponse("processing.html", {"request": request})
 
 
 @app.post("/generate")
 async def generate(name: str = Form(...)):
     name = name.strip()
+    log.info(f"📩 Запрос генерации: '{name}'")
+
     if not name:
         return JSONResponse({"error": "Введите имя"}, status_code=400)
     if len(name) > MAX_NAME_LENGTH:
@@ -143,17 +218,21 @@ async def generate(name: str = Form(...)):
         )
 
     if not FRAME_TEMPLATE.exists():
+        log.error("❌ frame_template.png не найден!")
         return JSONResponse(
             {"error": "frame_template.png не найден в assets"}, status_code=500
         )
     if not FONT_PATH.exists():
+        log.error("❌ BoldPixels.ttf не найден!")
         return JSONResponse(
             {"error": "BoldPixels.ttf не найден в assets"}, status_code=500
         )
 
     try:
         background_video = find_background_video()
+        log.info(f"🎥 Фоновое видео: {background_video.name} ({background_video.stat().st_size / (1024*1024):.1f} МБ)")
     except (FileNotFoundError, FileExistsError) as e:
+        log.error(f"❌ {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
 
     job_id = uuid.uuid4().hex[:8]
@@ -180,6 +259,7 @@ async def download(job_id: str):
         return JSONResponse(
             {"error": "Видео не найдено или устарело"}, status_code=404
         )
+    log.info(f"📥 Скачивание: {video_path.name}")
     return FileResponse(
         str(video_path),
         media_type="video/mp4",
@@ -194,11 +274,27 @@ async def watch(request: Request, job_id: str):
         return JSONResponse(
             {"error": "Видео не найдено или устарело"}, status_code=404
         )
+    log.info(f"👁️  Просмотр: {video_path.name}")
     return templates.TemplateResponse("watch.html", {
         "request": request,
         "job_id": job_id,
         "video_url": f"/download/{job_id}",
     })
+
+
+@app.on_event("startup")
+async def startup():
+    log.info(f"🚀 Сервер запущен!")
+    log.info(f"   Assets: {ASSETS_DIR}")
+    log.info(f"   Templates: {TEMPLATES_DIR}")
+    log.info(f"   Generated: {GENERATED_DIR}")
+
+    # Проверка файлов
+    mp4_files = list(ASSETS_DIR.glob("*.mp4"))
+    log.info(f"   Видео файлы: {[f.name for f in mp4_files]}")
+    log.info(f"   frame_template.png: {'✅' if FRAME_TEMPLATE.exists() else '❌'}")
+    log.info(f"   BoldPixels.ttf: {'✅' if FONT_PATH.exists() else '❌'}")
+    log.info(f"   monkey.png: {'✅' if (ASSETS_DIR / 'monkey.png').exists() else '❌'}")
 
 
 if __name__ == "__main__":

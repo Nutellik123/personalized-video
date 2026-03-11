@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#021a19">
+    <meta name="color-scheme" content="dark">
     <title>Просмотр видео</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
             height: 100%;
-            overflow: hidden;
-            position: fixed;
+            overflow: auto;
+            background: #021a19;
             width: 100%;
         }
 
@@ -20,7 +22,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 100vh;
             color: #fff;
+            padding: 16px;
         }
 
         canvas#particleCanvas {
@@ -32,13 +36,12 @@
         }
 
         .card {
-            background: rgba(2, 254, 247, .06);
-            backdrop-filter: blur(20px);
+            background: rgba(3, 49, 46, 0.85);
             border: 1px solid rgba(2, 254, 247, .2);
             border-radius: 24px;
-            padding: 32px 24px;
-            max-width: 460px;
-            width: 93%;
+            padding: 24px 20px;
+            max-width: 400px;
+            width: 100%;
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, .5),
                         0 0 40px rgba(2, 254, 247, .08);
@@ -60,18 +63,19 @@
 
         .video-container {
             width: 100%;
-            max-height: 55vh;
+            aspect-ratio: 9 / 16;
             border-radius: 16px;
             overflow: hidden;
             border: 2px solid rgba(2, 254, 247, .2);
             margin-bottom: 16px;
+            background: #000;
         }
 
         video {
             width: 100%;
-            max-height: 55vh;
+            height: 100%;
             display: block;
-            background: #000;
+            object-fit: cover;
         }
 
         .btn {
@@ -88,6 +92,7 @@
             text-decoration: none;
             display: block;
             margin-top: 10px;
+            -webkit-appearance: none;
         }
         .btn-green {
             background: linear-gradient(135deg, #02FEF7, #00e6a0);
@@ -121,7 +126,6 @@
     <div class="video-container">
         <video controls autoplay playsinline>
             <source src="{{ video_url }}" type="video/mp4">
-            Ваш браузер не поддерживает видео
         </video>
     </div>
 
@@ -136,7 +140,6 @@
 const canvas = document.getElementById('particleCanvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
-const PARTICLE_COUNT = 40;
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -164,9 +167,7 @@ class Particle {
             this.opacity += 0.008;
             if (this.opacity >= this.maxOpacity) this.fadeIn = false;
         }
-        if (this.y < canvas.height * 0.2) {
-            this.opacity -= 0.005;
-        }
+        if (this.y < canvas.height * 0.2) this.opacity -= 0.005;
         if (this.opacity <= 0 || this.y < -20) this.reset();
     }
     draw() {
@@ -177,7 +178,7 @@ class Particle {
     }
 }
 
-for (let i = 0; i < PARTICLE_COUNT; i++) {
+for (let i = 0; i < 40; i++) {
     const p = new Particle();
     p.y = Math.random() * canvas.height;
     p.opacity = Math.random() * 0.3;
@@ -185,12 +186,12 @@ for (let i = 0; i < PARTICLE_COUNT; i++) {
     particles.push(p);
 }
 
-function animateParticles() {
+function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     particles.forEach(p => { p.update(); p.draw(); });
-    requestAnimationFrame(animateParticles);
+    requestAnimationFrame(animate);
 }
-animateParticles();
+animate();
 </script>
 </body>
 </html>
