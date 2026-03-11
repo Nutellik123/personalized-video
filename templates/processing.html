@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генерация видео</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #021a19, #03312e, #064e47);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .particle {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: rgba(2, 254, 247, .3);
+            border-radius: 50%;
+            animation: float linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        .card {
+            background: rgba(2, 254, 247, .06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(2, 254, 247, .2);
+            border-radius: 24px;
+            padding: 48px 36px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .5),
+                        0 0 40px rgba(2, 254, 247, .08);
+            position: relative;
+            z-index: 1;
+            animation: cardAppear .8s ease-out;
+        }
+        @keyframes cardAppear {
+            0% { opacity: 0; transform: translateY(30px) scale(.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .logo {
+            width: 100px; height: 100px;
+            margin: 0 auto 16px;
+        }
+        .logo img { width: 100%; height: 100%; object-fit: contain; }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #02FEF7;
+            text-shadow: 0 0 20px rgba(2, 254, 247, .3);
+        }
+
+        .spinner {
+            width: 56px; height: 56px;
+            border: 4px solid rgba(2, 254, 247, .15);
+            border-top-color: #02FEF7;
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+            margin: 24px auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(2, 254, 247, .1);
+            border-radius: 3px;
+            margin-top: 16px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #02FEF7, #00c9b7);
+            width: 0;
+            transition: width .5s ease;
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: rgba(2, 254, 247, .6);
+            margin-top: 12px;
+        }
+        .loading-text strong { color: #02FEF7; }
+
+        .status-text {
+            font-size: 13px;
+            color: rgba(2, 254, 247, .4);
+            margin-top: 8px;
+        }
+
+        /* --- Готово --- */
+        .state { display: none; }
+        .state.active { display: block; }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .3s;
+            letter-spacing: .5px;
+            color: #021a19;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-green {
+            background: linear-gradient(135deg, #02FEF7, #00e6a0);
+            margin-top: 16px;
+        }
+        .btn-green:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(2, 254, 247, .35);
+        }
+
+        .success-icon {
+            font-size: 64px;
+            margin-bottom: 8px;
+            animation: popIn .5s ease-out;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .again {
+            display: inline-block;
+            margin-top: 20px;
+            color: rgba(2, 254, 247, .4);
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .again:hover { color: #02FEF7; }
+
+        .err {
+            color: #f87171;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="card">
+
+    <!-- Загрузка -->
+    <div id="s-load" class="state active">
+        <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
+        <h1>Создаём видео</h1>
+        <div class="spinner"></div>
+        <p class="loading-text">
+            Генерируем ролик для <strong id="l-name"></strong>
+        </p>
+        <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+        <p class="status-text" id="status-text">Подготовка...</p>
+    </div>
+
+    <!-- Готово -->
+    <div id="s-done" class="state">
+        <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
+        <div class="success-icon">🎬</div>
+        <h1>Видео готово!</h1>
+        <p style="color:#02FEF7; font-size:18px; margin:8px 0" id="d-name"></p>
+        <a id="dl" href="#" class="btn btn-green" download>Скачать видео 📥</a>
+        <div><a href="/" class="again">← Создать ещё одно</a></div>
+    </div>
+
+    <!-- Ошибка -->
+    <div id="s-err" class="state">
+        <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
+        <h1 style="color:#f87171">Ошибка</h1>
+        <p class="err" id="err-msg"></p>
+        <div style="margin-top:20px">
+            <a href="/" class="btn btn-green">← Попробовать снова</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const sL = document.getElementById('s-load');
+const sD = document.getElementById('s-done');
+const sE = document.getElementById('s-err');
+const barFill = document.getElementById('bar-fill');
+const statusText = document.getElementById('status-text');
+
+function show(s) {
+    [sL, sD, sE].forEach(e => e.classList.remove('active'));
+    s.classList.add('active');
+}
+
+// Получаем имя из URL
+const params = new URLSearchParams(window.location.search);
+const name = params.get('name');
+
+if (!name || !name.trim()) {
+    window.location.href = '/';
+} else {
+    document.getElementById('l-name').textContent = name;
+    document.getElementById('d-name').textContent = name;
+    startGeneration(name.trim());
+}
+
+async function startGeneration(name) {
+    // Анимация прогресс-бара
+    const stages = [
+        { pct: 15, text: 'Загрузка ресурсов...', delay: 500 },
+        { pct: 30, text: 'Обработка видео...', delay: 1500 },
+        { pct: 55, text: 'Наложение текста...', delay: 3000 },
+        { pct: 75, text: 'Рендеринг...', delay: 5000 },
+        { pct: 90, text: 'Почти готово...', delay: 8000 },
+    ];
+
+    stages.forEach(s => {
+        setTimeout(() => {
+            barFill.style.width = s.pct + '%';
+            statusText.textContent = s.text;
+        }, s.delay);
+    });
+
+    try {
+        const fd = new FormData();
+        fd.append('name', name);
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 120000);
+
+        const r = await fetch('/generate', {
+            method: 'POST',
+            body: fd,
+            signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        const d = await r.json();
+
+        if (!r.ok) throw new Error(d.error || 'Ошибка сервера');
+
+        // Успех!
+        barFill.style.width = '100%';
+        statusText.textContent = 'Готово!';
+
+        setTimeout(() => {
+            document.getElementById('dl').href = d.download_url;
+            show(sD);
+        }, 500);
+
+    } catch (e) {
+        if (e.name === 'AbortError') {
+            document.getElementById('err-msg').textContent =
+                'Превышено время ожидания. Попробуйте ещё раз.';
+        } else {
+            document.getElementById('err-msg').textContent = e.message;
+        }
+        show(sE);
+    }
+}
+
+// Частицы
+const pc = document.getElementById('particles');
+for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (5 + Math.random() * 10) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    p.style.width = p.style.height = (2 + Math.random() * 4) + 'px';
+    pc.appendChild(p);
+}
+</script>
+</body>
+</html>

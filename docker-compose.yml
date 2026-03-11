@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  videoapp:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./assets:/app/assets
+      - generated:/app/static/generated
+    restart: always
+
+volumes:
+  generated:

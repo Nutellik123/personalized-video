@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Персональное видео</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #021a19, #03312e, #064e47);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .particle {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: rgba(2, 254, 247, .3);
+            border-radius: 50%;
+            animation: float linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        .card {
+            background: rgba(2, 254, 247, .06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(2, 254, 247, .2);
+            border-radius: 24px;
+            padding: 48px 36px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .5),
+                        0 0 40px rgba(2, 254, 247, .08);
+            position: relative;
+            z-index: 1;
+            animation: cardAppear .8s ease-out;
+        }
+        @keyframes cardAppear {
+            0% { opacity: 0; transform: translateY(30px) scale(.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .logo {
+            width: 100px; height: 100px;
+            margin: 0 auto 16px;
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(2,254,247,.3)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(2,254,247,.5)); }
+        }
+        .logo img { width: 100%; height: 100%; object-fit: contain; }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #02FEF7;
+            text-shadow: 0 0 20px rgba(2, 254, 247, .3);
+        }
+
+        .sub {
+            font-size: 14px;
+            color: rgba(2, 254, 247, .5);
+            margin-bottom: 32px;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: rgba(2, 254, 247, .7);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid rgba(2, 254, 247, .25);
+            border-radius: 12px;
+            background: rgba(2, 254, 247, .06);
+            color: #fff;
+            font-size: 18px;
+            outline: none;
+            transition: .3s;
+            margin-bottom: 4px;
+        }
+        input:focus {
+            border-color: #02FEF7;
+            box-shadow: 0 0 20px rgba(2, 254, 247, .25);
+        }
+        input::placeholder { color: rgba(2, 254, 247, .25); }
+        input.invalid {
+            border-color: #f87171;
+            box-shadow: 0 0 15px rgba(248, 113, 113, .3);
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 12px;
+            color: rgba(2, 254, 247, .35);
+            margin-bottom: 20px;
+            transition: .3s;
+        }
+        .char-counter.over { color: #f87171; font-weight: 600; }
+
+        .limit-warning {
+            font-size: 13px;
+            color: #f87171;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .limit-warning.visible { display: block; }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .3s;
+            letter-spacing: .5px;
+            color: #021a19;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #02FEF7, #00c9b7);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,.15), transparent);
+            transform: rotate(45deg) translateX(-100%);
+            transition: .6s;
+        }
+        .btn-primary:hover::after {
+            transform: rotate(45deg) translateX(100%);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(2, 254, 247, .35);
+        }
+        .btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .err {
+            color: #f87171;
+            font-size: 14px;
+            margin-top: 12px;
+            animation: shake .5s;
+        }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="card">
+    <div class="logo">
+        <img src="/assets/monkey.png" alt="logo">
+    </div>
+    <h1>Персональное видео</h1>
+    <p class="sub">Введите ваше имя и получите уникальный ролик</p>
+
+    <form id="frm" action="/processing" method="GET">
+        <label for="name">Ваше имя</label>
+        <input type="text" id="name" name="name"
+               placeholder="Например: Александр"
+               required autocomplete="off">
+        <div class="char-counter" id="counter">0 / 21</div>
+        <div class="limit-warning" id="warning">⚠ Максимум 21 символ</div>
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+            Создать видео ✨
+        </button>
+    </form>
+    <p class="err" id="err" style="display:none"></p>
+</div>
+
+<script>
+const MAX_LEN = 21;
+const inp = document.getElementById('name');
+const btn = document.getElementById('submitBtn');
+const counter = document.getElementById('counter');
+const warning = document.getElementById('warning');
+const err = document.getElementById('err');
+const frm = document.getElementById('frm');
+
+inp.addEventListener('input', () => {
+    const len = inp.value.length;
+    counter.textContent = `${len} / ${MAX_LEN}`;
+    if (len > MAX_LEN) {
+        counter.classList.add('over');
+        warning.classList.add('visible');
+        inp.classList.add('invalid');
+        btn.disabled = true;
+    } else {
+        counter.classList.remove('over');
+        warning.classList.remove('visible');
+        inp.classList.remove('invalid');
+        btn.disabled = false;
+    }
+});
+
+frm.addEventListener('submit', (e) => {
+    const n = inp.value.trim();
+    if (!n) {
+        e.preventDefault();
+        err.textContent = 'Введите имя';
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 3000);
+        return;
+    }
+    if (n.length > MAX_LEN) {
+        e.preventDefault();
+        return;
+    }
+    // форма сама перенаправит на /processing?name=...
+});
+
+// Частицы
+const pc = document.getElementById('particles');
+for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (5 + Math.random() * 10) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    p.style.width = p.style.height = (2 + Math.random() * 4) + 'px';
+    pc.appendChild(p);
+}
+
+inp.focus();
+</script>
+</body>
+</html>
