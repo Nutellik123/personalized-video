@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#021a19">
     <meta name="color-scheme" content="dark">
-    <title>Персональное видео</title>
+    <title>Gameverse | Luminar X</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -130,11 +130,11 @@
             padding: 16px;
             border: none;
             border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
             cursor: pointer;
             transition: .3s;
-            letter-spacing: .5px;
+            letter-spacing: 1px;
             color: #021a19;
             -webkit-appearance: none;
         }
@@ -187,18 +187,18 @@
     <div class="logo">
         <img src="/assets/monkey.png" alt="logo">
     </div>
-    <h1>Персональное видео</h1>
-    <p class="sub">Введите ваше имя и получите уникальный ролик</p>
+    <h1>Возврат в Игровую вселенную</h1>
+    <p class="sub">Введи своё имя и будь снова в игре</p>
 
     <form id="frm" action="/processing" method="GET">
-        <label for="name">Ваше имя</label>
+        <label for="name">Твоё имя</label>
         <input type="text" id="name" name="name"
-               placeholder="Например: Александр"
+               placeholder="Пример: Александр"
                required autocomplete="off">
         <div class="char-counter" id="counter">0 / 21</div>
         <div class="limit-warning" id="warning">⚠ Максимум 21 символ</div>
         <button type="submit" class="btn btn-primary" id="submitBtn">
-            Создать видео ✨
+            В игру! 🎮
         </button>
     </form>
     <p class="err" id="err" style="display:none"></p>
@@ -290,7 +290,7 @@ frm.addEventListener('submit', (e) => {
     const n = inp.value.trim();
     if (!n) {
         e.preventDefault();
-        err.textContent = 'Введите имя';
+        err.textContent = 'Введи своё имя';
         err.style.display = 'block';
         setTimeout(() => err.style.display = 'none', 3000);
     }

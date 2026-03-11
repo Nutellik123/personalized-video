@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#021a19">
     <meta name="color-scheme" content="dark">
-    <title>Генерация видео</title>
+    <title>Создаём вселенную</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -146,6 +146,32 @@
             100% { transform: scale(1); }
         }
 
+        .rare-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-top: 8px;
+            animation: rarePulse 1.5s ease-in-out infinite;
+        }
+        @keyframes rarePulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, .4); }
+            50% { box-shadow: 0 0 25px rgba(255, 215, 0, .8); }
+        }
+
+        .cached-badge {
+            display: inline-block;
+            background: rgba(2, 254, 247, .15);
+            color: #02FEF7;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+        }
+
         .again {
             display: inline-block;
             margin-top: 20px;
@@ -165,21 +191,27 @@
 <div class="card">
     <div id="s-load" class="state active">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
-        <h1>Создаём видео</h1>
+        <h1>Создаём твою вселенную</h1>
         <div class="spinner"></div>
-        <p class="loading-text">Генерируем ролик для <strong id="l-name"></strong></p>
+        <p class="loading-text">Переносим игрока <strong>"<span id="l-name"></span>"</strong> в новую вселенную</p>
         <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
         <p class="status-text" id="status-text">Подготовка...</p>
     </div>
 
     <div id="s-done" class="state">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
-        <div class="success-icon">🎬</div>
-        <h1>Видео готово!</h1>
+        <div class="success-icon">🎮</div>
+        <h1>Вселенная готова!</h1>
         <p style="color:#02FEF7; font-size:18px; margin:8px 0" id="d-name"></p>
+        <div id="rare-container" style="display:none">
+            <span class="rare-badge">⭐ РЕДКИЙ ФОН!</span>
+        </div>
+        <div id="cached-container" style="display:none">
+            <span class="cached-badge">⚡ Мгновенная загрузка</span>
+        </div>
         <a id="watchBtn" href="#" class="btn btn-watch">▶ Смотреть видео</a>
         <a id="dl" href="#" class="btn btn-green" download>📥 Скачать видео</a>
-        <div><a href="/" class="again">← Создать ещё одно</a></div>
+        <div><a href="/" class="again">← Попробовать ещё раз</a></div>
     </div>
 
     <div id="s-err" class="state">
@@ -272,11 +304,11 @@ if (!name || !name.trim()) {
 
 async function startGeneration(name) {
     const stages = [
-        { pct: 15, text: 'Загрузка ресурсов...', delay: 500 },
-        { pct: 30, text: 'Обработка видео...', delay: 1500 },
-        { pct: 55, text: 'Наложение текста...', delay: 3000 },
-        { pct: 75, text: 'Рендеринг...', delay: 5000 },
-        { pct: 90, text: 'Почти готово...', delay: 8000 },
+        { pct: 10, text: 'Загрузка ресурсов...', delay: 400 },
+        { pct: 25, text: 'Компиляция видео...', delay: 1500 },
+        { pct: 45, text: 'Создание вселенной...', delay: 3000 },
+        { pct: 65, text: 'Погружение...', delay: 5000 },
+        { pct: 85, text: 'Вход во вселенную...', delay: 8000 },
     ];
 
     stages.forEach(s => {
@@ -305,8 +337,19 @@ async function startGeneration(name) {
         setTimeout(() => {
             document.getElementById('dl').href = d.download_url;
             document.getElementById('watchBtn').href = d.watch_url;
+            
+            // Показываем бейдж редкого фона
+            if (d.is_rare) {
+                document.getElementById('rare-container').style.display = 'block';
+            }
+            
+            // Показываем бейдж кэша
+            if (d.cached) {
+                document.getElementById('cached-container').style.display = 'block';
+            }
+            
             show(sD);
-        }, 500);
+        }, d.cached ? 100 : 500);
     } catch (e) {
         document.getElementById('err-msg').textContent =
             e.name === 'AbortError' ? 'Превышено время ожидания.' : e.message;
