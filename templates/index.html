@@ -38,7 +38,7 @@
             background: rgba(3, 49, 46, 0.85);
             border: 1px solid rgba(2, 254, 247, .2);
             border-radius: 24px;
-            padding: 40px 28px;
+            padding: 48px 36px;
             max-width: 420px;
             width: 90%;
             text-align: center;
@@ -54,8 +54,8 @@
         }
 
         .logo {
-            width: 90px; height: 90px;
-            margin: 0 auto 12px;
+            width: 100px; height: 100px;
+            margin: 0 auto 16px;
             animation: logoPulse 3s ease-in-out infinite;
         }
         @keyframes logoPulse {
@@ -65,50 +65,18 @@
         .logo img { width: 100%; height: 100%; object-fit: contain; }
 
         h1 {
-            font-size: 22px;
-            margin-bottom: 6px;
+            font-size: 24px;
+            margin-bottom: 8px;
             color: #02FEF7;
             text-shadow: 0 0 20px rgba(2, 254, 247, .3);
         }
 
         .sub {
-            font-size: 13px;
+            font-size: 14px;
             color: rgba(2, 254, 247, .5);
-            margin-bottom: 24px;
+            margin-bottom: 32px;
         }
 
-        /* Steps */
-        .step { display: none; animation: fadeIn .4s ease-out; }
-        .step.active { display: block; }
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(15px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Progress dots */
-        .progress-dots {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-        .dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            background: rgba(2, 254, 247, .15);
-            transition: .3s;
-        }
-        .dot.done { background: #02FEF7; box-shadow: 0 0 8px rgba(2,254,247,.4); }
-        .dot.current { background: rgba(2, 254, 247, .5); box-shadow: 0 0 6px rgba(2,254,247,.3); }
-
-        .question-title {
-            font-size: 16px;
-            color: #02FEF7;
-            margin-bottom: 16px;
-            font-weight: 600;
-        }
-
-        /* Name input */
         label {
             display: block;
             text-align: left;
@@ -119,7 +87,7 @@
 
         input[type="text"] {
             width: 100%;
-            padding: 14px 18px;
+            padding: 16px 20px;
             border: 2px solid rgba(2, 254, 247, .25);
             border-radius: 12px;
             background: rgba(2, 254, 247, .06);
@@ -144,15 +112,14 @@
             text-align: right;
             font-size: 12px;
             color: rgba(2, 254, 247, .35);
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             transition: .3s;
         }
         .char-counter.over { color: #f87171; font-weight: 600; }
 
-        /* Buttons */
         .btn {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             border: none;
             border-radius: 12px;
             font-size: 16px;
@@ -189,70 +156,16 @@
             box-shadow: none !important;
         }
 
-        /* Quiz option buttons */
-        .options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .opt-btn {
-            background: rgba(2, 254, 247, .06);
-            border: 2px solid rgba(2, 254, 247, .2);
-            border-radius: 16px;
-            padding: 16px 10px;
-            cursor: pointer;
-            transition: .3s;
-            text-align: center;
-            color: #fff;
-        }
-        .opt-btn:hover {
-            border-color: rgba(2, 254, 247, .5);
-            background: rgba(2, 254, 247, .1);
-            transform: translateY(-2px);
-        }
-        .opt-btn.selected {
-            border-color: #02FEF7;
-            background: rgba(2, 254, 247, .15);
-            box-shadow: 0 0 20px rgba(2, 254, 247, .2);
-        }
-        .opt-btn .opt-icon {
-            font-size: 36px;
-            margin-bottom: 8px;
-            display: block;
-        }
-        .opt-btn .opt-label {
-            font-size: 13px;
-            color: rgba(2, 254, 247, .8);
-            font-weight: 500;
-            line-height: 1.3;
-        }
-
         .err {
             color: #f87171;
             font-size: 14px;
-            margin-top: 10px;
+            margin-top: 12px;
             animation: shake .5s;
         }
         @keyframes shake {
             0%,100% { transform: translateX(0); }
             25% { transform: translateX(-8px); }
             75% { transform: translateX(8px); }
-        }
-
-        .nav-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-        }
-        .nav-row .btn { flex: 1; }
-        .btn-back {
-            background: rgba(2, 254, 247, .1);
-            color: #02FEF7;
-            border: 1px solid rgba(2, 254, 247, .3);
-        }
-        .btn-back:hover {
-            background: rgba(2, 254, 247, .2);
         }
     </style>
 </head>
@@ -265,83 +178,22 @@
         <img src="/assets/monkey.png" alt="logo">
     </div>
     <h1>Персональное видео</h1>
-    <p class="sub">Пройди викторину и получи уникальный ролик</p>
+    <p class="sub">Введите ваше имя и получите уникальный ролик</p>
 
-    <div class="progress-dots">
-        <div class="dot current" id="dot0"></div>
-        <div class="dot" id="dot1"></div>
-        <div class="dot" id="dot2"></div>
-    </div>
-
-    <!-- STEP 0: Name -->
-    <div class="step active" id="step0">
-        <p class="question-title">Как тебя зовут?</p>
-        <label for="name">Твоё имя</label>
-        <input type="text" id="name" placeholder="Например: Александр" autocomplete="off">
+    <form id="frm" action="/processing" method="GET">
+        <label for="name">Ваше имя</label>
+        <input type="text" id="name" name="name"
+               placeholder="Например: Александр"
+               required autocomplete="off">
         <div class="char-counter" id="counter">0 / 21</div>
-        <button class="btn btn-primary" id="nameNext">Далее →</button>
-        <p class="err" id="nameErr" style="display:none"></p>
-    </div>
-
-    <!-- STEP 1: Vibe (bg) -->
-    <div class="step" id="step1">
-        <p class="question-title">🌀 Твой вайб сегодня?</p>
-        <div class="options" id="bgOptions">
-            <div class="opt-btn" data-value="1">
-                <span class="opt-icon">⚡</span>
-                <span class="opt-label">Лазерный неон</span>
-            </div>
-            <div class="opt-btn" data-value="2">
-                <span class="opt-icon">🚀</span>
-                <span class="opt-label">Межгалактический шик</span>
-            </div>
-            <div class="opt-btn" data-value="3">
-                <span class="opt-icon">🍭</span>
-                <span class="opt-label">Желейный</span>
-            </div>
-            <div class="opt-btn" data-value="4">
-                <span class="opt-icon">🖤</span>
-                <span class="opt-label">Чёрный кор</span>
-            </div>
-        </div>
-        <div class="nav-row">
-            <button class="btn btn-back" id="bgBack">← Назад</button>
-            <button class="btn btn-primary" id="bgNext" disabled>Далее →</button>
-        </div>
-        <p class="err" id="bgErr" style="display:none"></p>
-    </div>
-
-    <!-- STEP 2: Age -->
-    <div class="step" id="step2">
-        <p class="question-title">🪐 Сколько прожил на планете Земля?</p>
-        <div class="options" id="ageOptions">
-            <div class="opt-btn" data-value="1">
-                <span class="opt-icon">👶</span>
-                <span class="opt-label">Меньше 10 земных лет</span>
-            </div>
-            <div class="opt-btn" data-value="2">
-                <span class="opt-icon">🧑‍🎓</span>
-                <span class="opt-label">11-18 земных лет</span>
-            </div>
-            <div class="opt-btn" data-value="3">
-                <span class="opt-icon">🧑‍💼</span>
-                <span class="opt-label">18-40 земных лет</span>
-            </div>
-            <div class="opt-btn" data-value="4">
-                <span class="opt-icon">🧙</span>
-                <span class="opt-label">Больше 40 земных лет</span>
-            </div>
-        </div>
-        <div class="nav-row">
-            <button class="btn btn-back" id="ageBack">← Назад</button>
-            <button class="btn btn-primary" id="ageSubmit" disabled>Создать видео ✨</button>
-        </div>
-        <p class="err" id="ageErr" style="display:none"></p>
-    </div>
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+            Создать видео ✨
+        </button>
+    </form>
+    <p class="err" id="err" style="display:none"></p>
 </div>
 
 <script>
-/* ── Particles ── */
 const canvas = document.getElementById('particleCanvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
@@ -392,79 +244,36 @@ function animate() {
 }
 animate();
 
-/* ── Quiz Logic ── */
 const MAX_LEN = 21;
-let currentStep = 0;
-let selectedBg = null;
-let selectedAge = null;
-
-const steps = [document.getElementById('step0'), document.getElementById('step1'), document.getElementById('step2')];
-const dots = [document.getElementById('dot0'), document.getElementById('dot1'), document.getElementById('dot2')];
-
 const inp = document.getElementById('name');
+const btn = document.getElementById('submitBtn');
 const counter = document.getElementById('counter');
+const err = document.getElementById('err');
+const frm = document.getElementById('frm');
 
-function showStep(n) {
-    steps.forEach((s, i) => s.classList.toggle('active', i === n));
-    dots.forEach((d, i) => {
-        d.classList.remove('done', 'current');
-        if (i < n) d.classList.add('done');
-        else if (i === n) d.classList.add('current');
-    });
-    currentStep = n;
-}
-
-/* Step 0: Name */
 inp.addEventListener('input', () => {
     const len = inp.value.length;
     counter.textContent = `${len} / ${MAX_LEN}`;
-    counter.classList.toggle('over', len > MAX_LEN);
-    inp.classList.toggle('invalid', len > MAX_LEN);
+    if (len > MAX_LEN) {
+        counter.classList.add('over');
+        inp.classList.add('invalid');
+        btn.disabled = true;
+    } else {
+        counter.classList.remove('over');
+        inp.classList.remove('invalid');
+        btn.disabled = false;
+    }
 });
 
-document.getElementById('nameNext').addEventListener('click', () => {
+frm.addEventListener('submit', (e) => {
     const n = inp.value.trim();
-    const errEl = document.getElementById('nameErr');
-    if (!n) { errEl.textContent = 'Введите имя'; errEl.style.display = 'block'; return; }
-    if (n.length > MAX_LEN) { errEl.textContent = `Максимум ${MAX_LEN} символов`; errEl.style.display = 'block'; return; }
-    errEl.style.display = 'none';
-    showStep(1);
-});
-
-inp.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('nameNext').click(); }
-});
-
-/* Step 1: BG */
-function setupOptions(containerId, nextBtnId, onSelect) {
-    const container = document.getElementById(containerId);
-    const nextBtn = document.getElementById(nextBtnId);
-    container.querySelectorAll('.opt-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            container.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            onSelect(btn.dataset.value);
-            nextBtn.disabled = false;
-        });
-    });
-}
-
-setupOptions('bgOptions', 'bgNext', (val) => { selectedBg = val; });
-setupOptions('ageOptions', 'ageSubmit', (val) => { selectedAge = val; });
-
-document.getElementById('bgNext').addEventListener('click', () => {
-    if (!selectedBg) return;
-    showStep(2);
-});
-
-document.getElementById('bgBack').addEventListener('click', () => showStep(0));
-document.getElementById('ageBack').addEventListener('click', () => showStep(1));
-
-/* Step 2: Submit */
-document.getElementById('ageSubmit').addEventListener('click', () => {
-    if (!selectedAge) return;
-    const name = encodeURIComponent(inp.value.trim());
-    window.location.href = `/processing?name=${name}&bg=${selectedBg}&age=${selectedAge}`;
+    if (!n) {
+        e.preventDefault();
+        err.textContent = 'Введите имя';
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 3000);
+    }
+    if (n.length > MAX_LEN) e.preventDefault();
 });
 
 inp.focus();
