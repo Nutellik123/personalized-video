@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#021a19">
     <meta name="color-scheme" content="dark">
-    <title>Генерация видео</title>
+    <title>Генерация вселенной</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -169,9 +169,9 @@
     <!-- LOADING -->
     <div id="s-load" class="state active">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
-        <h1>Создаём видео</h1>
+        <h1>Создаём твою вселенную</h1>
         <div class="spinner"></div>
-        <p class="loading-text">Генерируем ролик для <strong id="l-name"></strong></p>
+        <p class="loading-text"><strong id="l-name"></strong> возвращается в игру</p>
         <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
         <p class="status-text" id="status-text">Подготовка...</p>
     </div>
@@ -179,14 +179,14 @@
     <!-- DONE -->
     <div id="s-done" class="state">
         <div class="logo"><img src="/assets/monkey.png" alt="logo"></div>
-        <h1>Видео готово!</h1>
+        <h1>Вселенная готова!</h1>
         <div class="video-container">
             <video controls autoplay playsinline id="resultVideo">
                 <source id="videoSource" src="" type="video/mp4">
             </video>
         </div>
-        <a id="dl" href="#" class="btn btn-green" download>📥 Скачать видео</a>
-        <div><a href="/" class="again">← Создать ещё одно</a></div>
+        <a id="dl" href="#" class="btn btn-green" download>📥 Скачать</a>
+        <div><a href="/" class="again">← Создать ещё одну</a></div>
     </div>
 
     <!-- ERROR -->
@@ -273,9 +273,9 @@ if (!name || !name.trim()) {
 async function startGeneration(name) {
     const stages = [
         { pct: 15, text: 'Загрузка ресурсов...', delay: 500 },
-        { pct: 30, text: 'Обработка видео...', delay: 1500 },
-        { pct: 55, text: 'Наложение текста...', delay: 3000 },
-        { pct: 75, text: 'Рендеринг...', delay: 5000 },
+        { pct: 30, text: 'Обработка пространства...', delay: 1500 },
+        { pct: 55, text: 'Наложение текстур...', delay: 3000 },
+        { pct: 75, text: 'Создание вселенной...', delay: 5000 },
         { pct: 90, text: 'Почти готово...', delay: 8000 },
     ];
 
